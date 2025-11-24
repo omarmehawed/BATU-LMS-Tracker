@@ -7,20 +7,19 @@ import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from google_auth_oauthlib.flow import Flow  # مكتبة السيرفر
+from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import time
 import threading
 
-# --- إعدادات عامة ---
+# --- إعدادات عامة (Constants) ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-# حط هنا رابط التطبيق بتاعك لما ترفعه على ستريم ليت (مهم جداً يتطابق مع جوجل كونسول)
-REDIRECT_URI = "https://batu-lms-tracker.streamlit.app"
-
+REDIRECT_URI = "https://batu-lms-tracker.streamlit.app" # تأكد إن الرابط ده مطابق للي في جوجل كونسول
+MY_PORTFOLIO_URL = "https://www.linkedin.com/in/omar-mehawed" # حط لينكك هنا
 SESSIONS_FILE = "active_sessions.json"
 
-# --- دوال إدارة الجلسات (الذاكرة) ---
+# --- دوال إدارة الجلسات (Memory) ---
 def load_sessions():
     if not os.path.exists(SESSIONS_FILE): return {}
     try:
@@ -42,64 +41,48 @@ def is_user_active(username):
     sessions = load_sessions()
     return username in sessions
 
-# --- دوال جوجل والتحليل ---
+# --- دوال جوجل (Server Compatible) ---
 def get_calendar_service():
     creds = None
-    # ملف التوكن
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
             creds = pickle.load(token)
             
-    # لو مفيش توكن أو انتهى
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            # --- إعداد الـ Flow الخاص بالويب للسيرفر ---
             flow = Flow.from_client_secrets_file(
                 'credentials.json',
                 scopes=SCOPES,
                 redirect_uri=REDIRECT_URI
             )
 
-            # هل رجعنا من جوجل ومعانا الكود؟
             auth_code = st.query_params.get("code")
 
             if not auth_code:
-                # لو مفيش كود، نظهر زرار الدخول
                 auth_url, _ = flow.authorization_url(prompt='consent')
-                
                 st.markdown(f"""
                     <a href="{auth_url}" target="_self" style="
-                        background-color: #4285F4; 
-                        color: white; 
-                        padding: 10px 20px; 
-                        text-decoration: none; 
-                        border-radius: 5px; 
-                        font-weight: bold;
-                        display: block;
-                        text-align: center;
-                        margin: 20px 0;">
+                        background-color: #4285F4; color: white; padding: 10px 20px; 
+                        text-decoration: none; border-radius: 5px; font-weight: bold;
+                        display: block; text-align: center; margin: 20px 0;">
                         👉 اضغط هنا لربط حساب جوجل (Required)
                     </a>
                     """, unsafe_allow_html=True)
-                st.warning("يجب ربط حساب جوجل أولاً للمتابعة (اضغط الزر أعلاه).")
-                st.stop() # نوقف الكود لحد ما يضغط ويرجع
+                st.warning("يجب ربط حساب جوجل أولاً للمتابعة.")
+                st.stop()
             else:
-                # استبدال الكود بالتوكن
                 flow.fetch_token(code=auth_code)
                 creds = flow.credentials
-                
-                # حفظ التوكن
                 with open('token.pickle', 'wb') as token:
                     pickle.dump(creds, token)
-                
-                # تنظيف الرابط من الكود (عشان ميعملش مشاكل لو عملت ريفرش)
                 st.query_params.clear()
                 st.rerun()
 
     return build('calendar', 'v3', credentials=creds)
 
+# --- دوال المعالجة والتحليل ---
 def extract_date_regex(text):
     if not text: return None
     match = re.search(r'\d{4}-\d{2}-\d{2}', text)
@@ -110,11 +93,10 @@ def add_event_to_calendar(service, full_title, release_date, deadline_date, link
     try:
         if not release_date or not deadline_date: return False, "تاريخ غير صالح"
         
-        # منع التكرار
         events_result = service.events().list(
             calendarId='primary', 
             timeMin=f"{release_date}T00:00:00Z", 
-            timeMax=f"{release_date}T23:59:59Z",
+            timeMax=f"{release_date}T23:59:59Z", 
             singleEvents=True, q=full_title
         ).execute()
         
@@ -144,6 +126,7 @@ def delete_old_events(service):
         return len(events), "تم الحذف"
     except: return 0, "خطأ"
 
+# --- دالة السكرابينج (Scraping) ---
 def check_lms_assignments(username, password):
     chrome_options = Options()
     chrome_options.add_argument("--headless") 
@@ -217,8 +200,6 @@ def check_lms_assignments(username, password):
 # --- وظيفة المراقبة في الخلفية ---
 def run_background_monitor(user, pw, interval_minutes):
     try:
-        # بنعمل Service جديدة عشان الثريد
-        # (هنا ممكن نحتاج نعيد التحقق من التوكن، بس هنعتمد على الملف المحفوظ)
         if os.path.exists('token.pickle'):
             with open('token.pickle', 'rb') as token:
                 creds = pickle.load(token)
@@ -235,84 +216,47 @@ def run_background_monitor(user, pw, interval_minutes):
                 time.sleep(interval_minutes * 60)
     except: pass
 
-# --- إعدادات الصفحة والتصميم (Responsive CSS) ---
+# --- واجهة المستخدم (UI) ---
 st.set_page_config(page_title="BATU LMS", page_icon="🎓", layout="centered")
 
 st.markdown("""
 <style>
-    /* الأساسي للابتوب: الصور تأخذ راحتها لكن في المنتصف */
-    [data-testid="stImage"] {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    [data-testid="stImage"] img {
-        max-width: 100%;
-        height: auto;
-    }
-
-    /* تحسين الفوتر */
-    .footer {
-        position: fixed; left: 0; bottom: 0; width: 100%; 
-        background-color: #0e1117; color: white; text-align: center; 
-        padding: 10px; z-index: 999; font-size: 14px; border-top: 1px solid #333;
-    }
+    [data-testid="stImage"] {display: flex; justify-content: center; align-items: center;}
+    [data-testid="stImage"] img {max-width: 100%; height: auto;}
+    .footer {position: fixed; left: 0; bottom: 0; width: 100%; background-color: #0e1117; color: white; text-align: center; padding: 10px; z-index: 999; font-size: 14px; border-top: 1px solid #333;}
     .footer a {color: #4ea4f9; text-decoration: none;}
-
-    /* --- أهم جزء: تعديلات الموبايل --- */
     @media (max-width: 768px) {
-        /* إجبار الصور على حجم صغير ومتساوي في الموبايل */
-        [data-testid="stImage"] img {
-            max-width: 80px !important; /* حجم ثابت وصغير */
-            height: auto !important;
-            margin-bottom: 10px; /* مسافة صغيرة تحت اللوجو */
-        }
-        
-        /* تصغير حجم العنوان */
+        [data-testid="stImage"] img {max-width: 80px !important; height: auto !important; margin-bottom: 10px;}
         h1 { font-size: 1.4rem !important; }
-        p { font-size: 0.8rem !important; }
-        
-        /* تظبيط المسافات العلوية والسفلية */
-        .block-container { 
-            padding-top: 1rem !important; 
-            padding-bottom: 4rem !important; 
-        }
+        .block-container { padding-top: 1rem !important; padding-bottom: 4rem !important; }
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- الهيدر ---
+# Header
 col1, col2, col3 = st.columns([1, 3, 1])
-
 with col1:
-    if os.path.exists("uni_logo.png"): 
-        st.image("uni_logo.png", use_container_width=True)
-
+    if os.path.exists("uni_logo.png"): st.image("uni_logo.png", use_container_width=True)
 with col3:
-    if os.path.exists("it_logo.png"): 
-        st.image("it_logo.png", use_container_width=True)
-
+    if os.path.exists("it_logo.png"): st.image("it_logo.png", use_container_width=True)
 with col2:
     st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>BATU Notification LMS</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: gray; margin-top: 0;'>نظام إشعارات تلقائي للجامعة</p>", unsafe_allow_html=True)
 
-# --- التبويبات ---
+# Tabs
 tab_live, tab_manual, tab_clean = st.tabs(["🔴 Live Tracker", "🔄 Insert Past", "🗑️ Clean"])
 
-# 1. Live Tracker
+# Tab 1: Live Tracker
 with tab_live:
     st.info("أدخل بياناتك لمرة واحدة، وسيقوم النظام بالمتابعة تلقائياً.")
     col_a, col_b = st.columns(2)
-    with col_a:
-        live_user = st.text_input("Username", placeholder="24xxxx@batechu.com", key="live_u")
-    with col_b:
-        live_pass = st.text_input("Password", type="password", key="live_p")
+    with col_a: live_user = st.text_input("Username", placeholder="24xxxx@batechu.com", key="live_u")
+    with col_b: live_pass = st.text_input("Password", type="password", key="live_p")
     
     refresh_rate = st.slider("افحص الموقع كل (دقائق):", 10, 180, 60)
 
     if live_user:
-        is_active = is_user_active(live_user)
-        if is_active:
+        if is_user_active(live_user):
             sessions = load_sessions()
             start_time = sessions.get(live_user, {}).get("start_time", "Unknown")
             st.success(f"✅ يا هندسة، المراقبة شغالة ليك من الساعة: {start_time}")
@@ -324,26 +268,24 @@ with tab_live:
         else:
             if st.button("ابدأ المراقبة الآن 🚀"):
                 if live_user and live_pass:
-                    # محاولة الاتصال بجوجل الأول عشان لو مش مربوط يربطه
                     try:
+                        # التأكد من الاتصال بجوجل أولاً
                         srv = get_calendar_service()
                         now_str = datetime.datetime.now().strftime("%I:%M %p")
                         save_session(live_user, {"start_time": now_str})
-                        
                         t = threading.Thread(target=run_background_monitor, args=(live_user, live_pass, refresh_rate))
                         t.daemon = True 
                         t.start()
-                        
                         st.toast(f"تم التفعيل لـ {live_user}!", icon="📡")
                         time.sleep(1)
                         st.rerun()
                     except Exception as e:
-                        st.error(f"حدث خطأ أثناء الربط بجوجل: {e}")
+                        st.error(f"خطأ في الاتصال: {e}")
                 else: st.error("دخل الباسورد!")
     else:
         st.caption("👈 اكتب اليوزر عشان نشوف حالتك.")
 
-# 2. Manual
+# Tab 2: Manual Check
 with tab_manual:
     with st.form("sync_manual"):
         m_user = st.text_input("Username")
@@ -362,12 +304,10 @@ with tab_manual:
                         s, m = add_event_to_calendar(srv, d['title'], d['release_date'], d['deadline_date'], d['link'])
                         if s: st.success(f"✅ {d['title']}")
                         else: st.error(f"❌ {d['title']} -> {m}")
-                except Exception as e:
-                    st.error(f"خطأ في جوجل: {e}")
+                except: st.error("جوجل مش متصل")
             else: st.warning("No data.")
 
-
-# 3. Clean
+# Tab 3: Clean
 with tab_clean:
     if st.button("Clean All Events"):
         try:
