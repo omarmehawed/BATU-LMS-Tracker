@@ -15,7 +15,8 @@ import threading
 
 # --- إعدادات عامة ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-MY_PORTFOLIO_URL = "https://your-portfolio-link.com" 
+# MY_PORTFOLIO_URL = "https://your-portfolio-link.com" # (اختياري: حط لينك موقعك هنا)
+
 SESSIONS_FILE = "active_sessions.json"
 
 # --- دوال إدارة الجلسات ---
@@ -169,7 +170,7 @@ st.set_page_config(page_title="BATU LMS", page_icon="🎓", layout="centered")
 
 st.markdown("""
 <style>
-    /* جعل الصور تتوسط الأعمدة وتتكيف مع الحجم */
+    /* الأساسي للابتوب: الصور تأخذ راحتها لكن في المنتصف */
     [data-testid="stImage"] {
         display: flex;
         justify-content: center;
@@ -180,40 +181,42 @@ st.markdown("""
         height: auto;
     }
 
-    /* تحسين الفوتر للموبايل */
+    /* تحسين الفوتر */
     .footer {
-        position: fixed; 
-        left: 0; 
-        bottom: 0; 
-        width: 100%; 
-        background-color: #0e1117; 
-        color: white; 
-        text-align: center; 
-        padding: 10px; 
-        z-index: 999;
-        font-size: 14px;
-        border-top: 1px solid #333;
+        position: fixed; left: 0; bottom: 0; width: 100%; 
+        background-color: #0e1117; color: white; text-align: center; 
+        padding: 10px; z-index: 999; font-size: 14px; border-top: 1px solid #333;
     }
     .footer a {color: #4ea4f9; text-decoration: none;}
 
-    /* تعديلات خاصة بالموبايل (Media Query) */
+    /* --- أهم جزء: تعديلات الموبايل --- */
     @media (max-width: 768px) {
-        /* تصغير حجم العنوان في الموبايل */
-        h1 { font-size: 1.5rem !important; }
-        .caption { font-size: 0.8rem !important; }
+        /* إجبار الصور على حجم صغير ومتساوي في الموبايل */
+        [data-testid="stImage"] img {
+            max-width: 80px !important; /* حجم ثابت وصغير */
+            height: auto !important;
+            margin-bottom: 10px; /* مسافة صغيرة تحت اللوجو */
+        }
         
-        /* تظبيط المسافات */
-        .block-container { padding-top: 2rem; padding-bottom: 5rem; }
+        /* تصغير حجم العنوان */
+        h1 { font-size: 1.4rem !important; }
+        p { font-size: 0.8rem !important; }
+        
+        /* تظبيط المسافات العلوية والسفلية */
+        .block-container { 
+            padding-top: 1rem !important; 
+            padding-bottom: 4rem !important; 
+        }
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- الهيدر (اللوجوهات والعنوان) ---
-# استخدام use_container_width=True بيخلي الصورة تاخد حجم العمود بالظبط
+# --- الهيدر ---
 col1, col2, col3 = st.columns([1, 3, 1])
 
 with col1:
     if os.path.exists("uni_logo.png"): 
+        # use_container_width بيخليها تتجاوب مع الـ CSS اللي كتبناه
         st.image("uni_logo.png", use_container_width=True)
 
 with col3:
@@ -222,7 +225,7 @@ with col3:
 
 with col2:
     st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>BATU Notification LMS</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray;'>نظام إشعارات تلقائي للجامعة</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray; margin-top: 0;'>نظام إشعارات تلقائي للجامعة</p>", unsafe_allow_html=True)
 
 # --- التبويبات ---
 tab_live, tab_manual, tab_clean = st.tabs(["🔴 Live Tracker", "🔄 Insert Past", "🗑️ Clean"])
@@ -292,4 +295,5 @@ with tab_clean:
         st.success(m)
 
 # Footer
-st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
+# (اختياري: لو عندك لينك بورتفوليو حطه مكان #)
+st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="#" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
