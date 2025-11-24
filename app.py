@@ -3,7 +3,7 @@ import datetime
 import os.path
 import pickle
 import re
-import json # <--- عشان نحفظ حالة المستخدمين
+import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -11,54 +11,46 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import time
-import threading # <--- عشان نشغل البوت في الخلفية وميوقفش مع الريستارت
+import threading
 
 # --- إعدادات عامة ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 MY_PORTFOLIO_URL = "https://your-portfolio-link.com" 
-SESSIONS_FILE = "active_sessions.json" # ده الدفتر اللي بنسجل فيه مين شغال
+SESSIONS_FILE = "active_sessions.json"
 
-# --- دوال إدارة الجلسات (الذاكرة الدائمة) ---
+# --- دوال إدارة الجلسات ---
 def load_sessions():
-    if not os.path.exists(SESSIONS_FILE):
-        return {}
+    if not os.path.exists(SESSIONS_FILE): return {}
     try:
-        with open(SESSIONS_FILE, "r") as f:
-            return json.load(f)
-    except:
-        return {}
+        with open(SESSIONS_FILE, "r") as f: return json.load(f)
+    except: return {}
 
 def save_session(username, status_data):
     sessions = load_sessions()
     sessions[username] = status_data
-    with open(SESSIONS_FILE, "w") as f:
-        json.dump(sessions, f)
+    with open(SESSIONS_FILE, "w") as f: json.dump(sessions, f)
 
 def remove_session(username):
     sessions = load_sessions()
     if username in sessions:
         del sessions[username]
-        with open(SESSIONS_FILE, "w") as f:
-            json.dump(sessions, f)
+        with open(SESSIONS_FILE, "w") as f: json.dump(sessions, f)
 
 def is_user_active(username):
     sessions = load_sessions()
     return username in sessions
 
-# --- دوال جوجل والتحليل (الأساسية) ---
+# --- دوال جوجل والتحليل ---
 def get_calendar_service():
     creds = None
     if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
+        with open('token.pickle', 'rb') as token: creds = pickle.load(token)
     if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+        if creds and creds.expired and creds.refresh_token: creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
+        with open('token.pickle', 'wb') as token: pickle.dump(creds, token)
     return build('calendar', 'v3', credentials=creds)
 
 def extract_date_regex(text):
@@ -157,65 +149,87 @@ def check_lms_assignments(username, password):
     finally: driver.quit()
     return logs, found_data
 
-# --- وظيفة المراقبة في الخلفية (Background Worker) ---
+# --- وظيفة المراقبة ---
 def run_background_monitor(user, pw, interval_minutes):
-    """
-    دي الوظيفة اللي هتشتغل في الخلفية وتفضل تلف وتدور
-    """
     try:
-        # إنشاء اتصال منفصل بجوجل داخل الثريد
         srv = get_calendar_service()
-        
         while True:
-            # 1. هل المستخدم لسه موجود في ملف الذاكرة؟
-            if not is_user_active(user):
-                print(f"Stopping monitor for {user}...")
-                break # وقف المراقبة لو الاسم اتمسح
-
-            print(f"Checking for {user}...")
-            
-            # 2. تنفيذ الفحص
+            if not is_user_active(user): break
             try:
                 logs, data = check_lms_assignments(user, pw)
                 if data:
                     for d in data:
                         add_event_to_calendar(srv, d['title'], d['release_date'], d['deadline_date'], d['link'])
-            except:
-                pass
-            
-            # 3. الانتظار
+            except: pass
             time.sleep(interval_minutes * 60)
-            
-    except Exception as e:
-        print(f"Thread Error: {e}")
+    except: pass
 
-# --- UI Design ---
-st.set_page_config(page_title="BATU Notification LMS", page_icon="🎓")
+# --- إعدادات الصفحة والتصميم (Responsive CSS) ---
+st.set_page_config(page_title="BATU LMS", page_icon="🎓", layout="centered")
+
 st.markdown("""
 <style>
-    .footer {position: fixed; left: 0; bottom: 0; width: 100%; background-color: #0e1117; color: white; text-align: center; padding: 10px; border-top: 1px solid #333; z-index: 100;}
-    .footer a {color: #4ea4f9; text-decoration: none; font-weight: bold;}
-    [data-testid="stImage"] {display: flex; justify-content: center;}
+    /* جعل الصور تتوسط الأعمدة وتتكيف مع الحجم */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    [data-testid="stImage"] img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* تحسين الفوتر للموبايل */
+    .footer {
+        position: fixed; 
+        left: 0; 
+        bottom: 0; 
+        width: 100%; 
+        background-color: #0e1117; 
+        color: white; 
+        text-align: center; 
+        padding: 10px; 
+        z-index: 999;
+        font-size: 14px;
+        border-top: 1px solid #333;
+    }
+    .footer a {color: #4ea4f9; text-decoration: none;}
+
+    /* تعديلات خاصة بالموبايل (Media Query) */
+    @media (max-width: 768px) {
+        /* تصغير حجم العنوان في الموبايل */
+        h1 { font-size: 1.5rem !important; }
+        .caption { font-size: 0.8rem !important; }
+        
+        /* تظبيط المسافات */
+        .block-container { padding-top: 2rem; padding-bottom: 5rem; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
-c1, c2, c3 = st.columns([1, 2, 1])
-with c1:
-    if os.path.exists("uni_logo.png"): st.image("uni_logo.png", width=90)
-with c3:
-    if os.path.exists("it_logo.png"): st.image("it_logo.png", width=90)
-with c2:
-    st.title("BATU Notification LMS")
-    st.caption("نظام إشعارات تلقائي للجامعة")
+# --- الهيدر (اللوجوهات والعنوان) ---
+# استخدام use_container_width=True بيخلي الصورة تاخد حجم العمود بالظبط
+col1, col2, col3 = st.columns([1, 3, 1])
 
-tab_live, tab_manual, tab_clean = st.tabs(["🔴 Live Tracker", "🔄 Insert Past Assignment", "🗑️ Clean"])
+with col1:
+    if os.path.exists("uni_logo.png"): 
+        st.image("uni_logo.png", use_container_width=True)
 
-# --- 1. Live Tracker (الذكي) ---
+with col3:
+    if os.path.exists("it_logo.png"): 
+        st.image("it_logo.png", use_container_width=True)
+
+with col2:
+    st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>BATU Notification LMS</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray;'>نظام إشعارات تلقائي للجامعة</p>", unsafe_allow_html=True)
+
+# --- التبويبات ---
+tab_live, tab_manual, tab_clean = st.tabs(["🔴 Live Tracker", "🔄 Insert Past", "🗑️ Clean"])
+
+# 1. Live Tracker
 with tab_live:
-    st.markdown("### نظام المراقبة الحية")
     st.info("أدخل بياناتك لمرة واحدة، وسيقوم النظام بالمتابعة تلقائياً.")
-
-    # الخانات ظاهرة دائماً
     col_a, col_b = st.columns(2)
     with col_a:
         live_user = st.text_input("Username", placeholder="24xxxx@batechu.com", key="live_u")
@@ -224,46 +238,33 @@ with tab_live:
     
     refresh_rate = st.slider("افحص الموقع كل (دقائق):", 10, 180, 60)
 
-    # فحص الحالة من "الدفتر" (الملف)
-    # لو اليوزر كاتب اسمه، نشوف حالته هو
-    # لو مش كاتب، مش هنعرف نعرض حالة
-    
     if live_user:
         is_active = is_user_active(live_user)
-        
         if is_active:
-            # نجيب وقت البدء
             sessions = load_sessions()
             start_time = sessions.get(live_user, {}).get("start_time", "Unknown")
-            
-            st.success(f"✅ يا هندسة، نظام المراقبة بتاعك مُفعل وشغال بالفعل منذ: {start_time}")
-            
-            if st.button(f"🛑 إلغاء المراقبة لـ {live_user}"):
+            st.success(f"✅ يا هندسة، المراقبة شغالة ليك من الساعة: {start_time}")
+            if st.button(f"🛑 إلغاء المراقبة"):
                 remove_session(live_user)
-                st.warning("تم إلغاء المراقبة بنجاح! سيتوقف البوت قريباً.")
+                st.warning("تم الإلغاء.")
                 time.sleep(1)
                 st.rerun()
         else:
             if st.button("ابدأ المراقبة الآن 🚀"):
                 if live_user and live_pass:
-                    # 1. حفظ الحالة في الملف
-                    now_str = datetime.datetime.now().strftime("%Y-%m-%d %I:%M %p")
-                    save_session(live_user, {"start_time": now_str, "rate": refresh_rate})
-                    
-                    # 2. تشغيل البوت في ثريد منفصل (عشان يفضل شغال حتى لو قفلت الصفحة)
+                    now_str = datetime.datetime.now().strftime("%I:%M %p")
+                    save_session(live_user, {"start_time": now_str})
                     t = threading.Thread(target=run_background_monitor, args=(live_user, live_pass, refresh_rate))
-                    t.daemon = True # عشان يقفل لما السيرفر الرئيسي يقفل
+                    t.daemon = True 
                     t.start()
-                    
-                    st.toast(f"تم تفعيل البوت لـ {live_user}!", icon="📡")
+                    st.toast(f"تم التفعيل لـ {live_user}!", icon="📡")
                     time.sleep(1)
                     st.rerun()
-                else:
-                    st.error("دخل الباسورد يا هندسة!")
+                else: st.error("دخل الباسورد!")
     else:
-        st.caption("👈 اكتب اليوزر نيم عشان نشوف حالتك.")
+        st.caption("👈 اكتب اليوزر عشان نشوف حالتك.")
 
-# --- 2. Manual ---
+# 2. Manual
 with tab_manual:
     with st.form("sync_manual"):
         m_user = st.text_input("Username")
@@ -283,11 +284,12 @@ with tab_manual:
                     else: st.error(f"❌ {d['title']} -> {m}")
             else: st.warning("No data.")
 
-# --- 3. Clean ---
+# 3. Clean
 with tab_clean:
     if st.button("Clean All Events"):
         srv = get_calendar_service()
         c, m = delete_old_events(srv)
         st.success(m)
 
+# Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
