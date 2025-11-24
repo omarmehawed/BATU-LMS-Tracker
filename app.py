@@ -12,7 +12,9 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import time
 import threading
-
+# --- [كود الطوارئ] مسح التوكن القديم إجبارياً ---
+if os.path.exists('token.pickle'):
+    os.remove('token.pickle')
 # --- إعدادات عامة (Constants) ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 REDIRECT_URI = "https://batu-lms-students-tracker.streamlit.app" # تأكد إن الرابط ده مطابق للي في جوجل كونسول
@@ -319,5 +321,6 @@ with tab_clean:
 
 # Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
+
 
 
