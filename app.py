@@ -366,9 +366,16 @@ with tab_manual:
                     st.error(f"خطأ في جوجل: {e}")
             else: st.warning("No data.")
 
+
 # 3. Clean
 with tab_clean:
     if st.button("Clean All Events"):
         try:
             srv = get_calendar_service()
-            c, m = delete_
+            c, m = delete_old_events(srv)
+            st.success(m)
+        except Exception as e:
+            st.error(f"حدث خطأ: {e}")
+
+# Footer
+st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
