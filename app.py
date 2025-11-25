@@ -287,8 +287,8 @@ with tab_live:
     with col_a: live_user = st.text_input("Username", placeholder="24xxxx@batechu.com", key="live_u")
     with col_b: live_pass = st.text_input("Password", type="password", key="live_p")
     
-    refresh_rate = st.slider("افحص الموقع كل (دقائق):", 10, 180, 60)
-
+    refresh_rate = st.slider("افحص الموقع كل (دقائق):", 30, 180, 60, step=30)
+    
     if live_user:
         # هل اليوزر ده ليه توكن متخزن؟
         has_token = get_token_from_db(live_user) is not None
@@ -382,3 +382,4 @@ with tab_clean:
                 st.error(f"حدث خطأ (تأكد أنك قمت بالربط أولاً): {e}")
         else:
             st.error("اكتب اليوزر الأول")
+
