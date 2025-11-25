@@ -308,32 +308,47 @@ with tab_live:
         st.caption("👈 اكتب اليوزر عشان نشوف حالتك.")
 
 # Tab 2: Manual Check
+# 2. Manual Check
 with tab_manual:
     with st.form("sync_manual"):
-        m_user = st.text_input("Username",placeholder="2xxxxx@batechu.com")
+        m_user = st.text_input("Username")
         m_pw = st.text_input("Password", type="password")
         m_sub = st.form_submit_button("Insert Past Assignments")
+    
     if m_sub and m_user and m_pw:
+        # 1. نجيب البيانات من الجامعة الأول
         with st.status("Working...", expanded=True):
             logs, data = check_lms_assignments(m_user, m_pw)
             for l in logs: 
                 if "❌" in l or "🚫" in l: st.error(l)
                 else: st.text(l)
+            
+            # 2. لو في بيانات، نحاول نتصل بجوجل ونضيف
             if data:
+                # --- التعديل هنا: الاتصال بجوجل خارج الـ try ---
+                srv = get_calendar_service() 
+                
                 try:
-                    srv = get_calendar_service()
+                    count = 0
                     for d in data:
                         s, m = add_event_to_calendar(srv, d['title'], d['release_date'], d['deadline_date'], d['link'])
-                        if s: st.success(f"✅ {d['title']}")
+                        if s: 
+                            st.success(f"✅ {d['title']}")
+                            count += 1
                         else: st.error(f"❌ {d['title']} -> {m}")
-                except: st.error("جوجل مش متصل")
-            else: st.warning("No data.")
+                    
+                    if count > 0: st.balloons()
+                except Exception as e:
+                    st.error(f"خطأ أثناء الإضافة للكاليندر: {e}")
+            else:
+                st.warning("لم يتم العثور على واجبات.")
 
-# Tab 3: Clean
+# 3. Clean
 with tab_clean:
     if st.button("Clean All Events"):
+        # --- التعديل هنا أيضاً ---
+        srv = get_calendar_service()
         try:
-            srv = get_calendar_service()
             c, m = delete_old_events(srv)
             st.success(m)
         except Exception as e:
