@@ -17,7 +17,7 @@ if os.path.exists('token.pickle'):
     os.remove('token.pickle')
 # --- إعدادات عامة (Constants) ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-REDIRECT_URI = "https://batu-lms-students-tracker.streamlit.app" # تأكد إن الرابط ده مطابق للي في جوجل كونسول
+REDIRECT_URI = "https://batu-lms-students-tracker.streamlit.app/" # تأكد إن الرابط ده مطابق للي في جوجل كونسول
 MY_PORTFOLIO_URL = "https://www.linkedin.com/in/omar-mehawed-861098249/" # حط لينكك هنا
 SESSIONS_FILE = "active_sessions.json"
 
@@ -329,6 +329,7 @@ with tab_clean:
 
 # Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
+
 
 
 
