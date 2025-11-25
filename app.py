@@ -280,10 +280,11 @@ with col2:
 tab_live, tab_manual, tab_clean = st.tabs(["🔴 Live Tracker", "🔄 Insert Past", "🗑️ Clean"])
 
 # Tab 1: Live Tracker
+# 1. Live Tracker
 with tab_live:
     st.info("أدخل بياناتك لمرة واحدة، وسيقوم النظام بالمتابعة تلقائياً.")
     col_a, col_b = st.columns(2)
-    with col_a: live_user = st.text_input("Username", placeholder="2xxxxx@batechu.com", key="live_u")
+    with col_a: live_user = st.text_input("Username", placeholder="24xxxx@batechu.com", key="live_u")
     with col_b: live_pass = st.text_input("Password", type="password", key="live_p")
     
     refresh_rate = st.slider("افحص الموقع كل (دقائق):", 10, 180, 60)
@@ -291,11 +292,13 @@ with tab_live:
     if live_user:
         # هل اليوزر ده ليه توكن متخزن؟
         has_token = get_token_from_db(live_user) is not None
+        # هل اليوزر ده مشغل مراقبة؟
         is_running = is_user_active(live_user)
 
         if has_token:
             st.success(f"✅ الحساب ({live_user}) مربوط بجوجل وجاهز.")
-            if st.button("🔄 فك الارتباط (Re-link Google)"):
+            # ضفنا key هنا
+            if st.button("🔄 فك الارتباط (Re-link Google)", key="relink_btn_unique"):
                 delete_token_from_db(live_user)
                 st.rerun()
         else:
@@ -305,11 +308,13 @@ with tab_live:
             sessions = load_sessions()
             start_time = sessions.get(live_user, {}).get("start_time", "Unknown")
             st.warning(f"📡 المراقبة تعمل حالياً منذ: {start_time}")
-            if st.button(f"🛑 إيقاف المراقبة"):
+            # ضفنا key هنا
+            if st.button(f"🛑 إيقاف المراقبة", key="stop_btn_unique"):
                 remove_session(live_user)
                 st.rerun()
         else:
-            if st.button("ابدأ المراقبة الآن 🚀"):
+            # ضفنا key هنا (وده اللي كان مطلع الايرور عندك)
+            if st.button("ابدأ المراقبة الآن 🚀", key="start_btn_unique"):
                 if live_user and live_pass:
                     try:
                         # هنا بنبعت اليوزر عشان الدالة تدور على التوكن بتاعه أو تنشئه
@@ -325,32 +330,6 @@ with tab_live:
                         st.rerun()
                     except Exception as e:
                         st.error(f"خطأ: {e}")
-                else: st.error("دخل الباسورد!")
-        if is_user_active(live_user):
-            sessions = load_sessions()
-            start_time = sessions.get(live_user, {}).get("start_time", "Unknown")
-            st.success(f"✅ يا هندسة، المراقبة شغالة ليك من الساعة: {start_time}")
-            if st.button(f"🛑 إلغاء المراقبة"):
-                remove_session(live_user)
-                st.warning("تم الإلغاء.")
-                time.sleep(1)
-                st.rerun()
-        else:
-            if st.button("ابدأ المراقبة الآن 🚀"):
-                if live_user and live_pass:
-                    try:
-                        # التأكد من الاتصال بجوجل أولاً
-                        srv = get_calendar_service()
-                        now_str = datetime.datetime.now().strftime("%I:%M %p")
-                        save_session(live_user, {"start_time": now_str})
-                        t = threading.Thread(target=run_background_monitor, args=(live_user, live_pass, refresh_rate))
-                        t.daemon = True 
-                        t.start()
-                        st.toast(f"تم التفعيل لـ {live_user}!", icon="📡")
-                        time.sleep(1)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"خطأ في الاتصال: {e}")
                 else: st.error("دخل الباسورد!")
     else:
         st.caption("👈 اكتب اليوزر عشان نشوف حالتك.")
@@ -404,6 +383,7 @@ with tab_clean:
 
 # Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
+
 
 
 
