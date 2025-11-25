@@ -412,7 +412,7 @@ with tab_manual:
              #    delete_token_from_db(m_user)
              #    st.rerun()
         else:
-             st.warning("⚠️ هذا الحساب غير مربوط بجوجل. (يفضل ربطه من تبويب Live Tracker أولاً).")
+             st.warning("⚠️ هذا الحساب غير مربوط بجوجل.")
 
     # 3. زرار التشغيل
     if st.button("Insert Past Assignments", key="manual_btn"):
@@ -474,6 +474,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
