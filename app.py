@@ -334,28 +334,25 @@ with tab_live:
     else:
         st.caption("👈 اكتب اليوزر عشان نشوف حالتك.")
 
-# Tab 2: Manual Check
 # 2. Manual Check
 with tab_manual:
     with st.form("sync_manual"):
-        m_user = st.text_input("Username")
+        m_user = st.text_input("Username", placeholder="2xxxxx@batechu.com")
         m_pw = st.text_input("Password", type="password")
         m_sub = st.form_submit_button("Insert Past Assignments")
     
     if m_sub and m_user and m_pw:
-        # 1. نجيب البيانات من الجامعة الأول
         with st.status("Working...", expanded=True):
             logs, data = check_lms_assignments(m_user, m_pw)
             for l in logs: 
                 if "❌" in l or "🚫" in l: st.error(l)
                 else: st.text(l)
             
-            # 2. لو في بيانات، نحاول نتصل بجوجل ونضيف
             if data:
-                # --- التعديل هنا: الاتصال بجوجل خارج الـ try ---
-                srv = get_calendar_service() 
-                
                 try:
+                    # --- التعديل هنا: بعتنا m_user للدالة عشان تجيب التوكن بتاعه ---
+                    srv = get_calendar_service(username_key=m_user)
+                    
                     count = 0
                     for d in data:
                         s, m = add_event_to_calendar(srv, d['title'], d['release_date'], d['deadline_date'], d['link'])
@@ -366,9 +363,25 @@ with tab_manual:
                     
                     if count > 0: st.balloons()
                 except Exception as e:
-                    st.error(f"خطأ أثناء الإضافة للكاليندر: {e}")
+                    # لو في مشكلة (زي إنه مش رابط أصلاً) هيظهر رسالة واضحة
+                    st.warning("⚠️ لم يتم العثور على ربط جوجل لهذا الحساب. يرجى الذهاب لتبويب 'Live Tracker' وربط الحساب أولاً.")
             else:
-                st.warning("لم يتم العثور على واجبات.")
+                st.warning("No data found.")
+
+# 3. Clean
+with tab_clean:
+    c_user = st.text_input("Username للتنظيف", placeholder="2xxxxx@batechu.com")
+    if st.button("Clean All Events", key="clean_btn"):
+        if c_user:
+            try:
+                # --- وهنا كمان: بعتنا c_user ---
+                srv = get_calendar_service(username_key=c_user)
+                c, m = delete_old_events(srv)
+                st.success(m)
+            except Exception as e:
+                st.error(f"حدث خطأ (تأكد أنك قمت بالربط أولاً): {e}")
+        else:
+            st.error("اكتب اليوزر الأول")
 
 # 3. Clean
 with tab_clean:
@@ -383,6 +396,7 @@ with tab_clean:
 
 # Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
+
 
 
 
