@@ -17,7 +17,7 @@ if os.path.exists('token.pickle'):
     os.remove('token.pickle')
 # --- إعدادات عامة (Constants) ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-REDIRECT_URI = "https://batu-lms-students-tracker.streamlit.app/" # تأكد إن الرابط ده مطابق للي في جوجل كونسول
+REDIRECT_URI = "https://batu-lms-tracker.streamlit.app"" # تأكد إن الرابط ده مطابق للي في جوجل كونسول
 MY_PORTFOLIO_URL = "https://www.linkedin.com/in/omar-mehawed-861098249/" # حط لينكك هنا
 SESSIONS_FILE = "active_sessions.json"
 
@@ -56,7 +56,7 @@ def get_calendar_service():
         else:
             # --- هنا التعديل والحل ---
             # 1. بنثبت الرابط الأساسي (من غير شرطة في الآخر)
-            redirect_uri = "https://batu-lms-students-tracker.streamlit.app/"
+            redirect_uri = "https://batu-lms-tracker.streamlit.app"
             
             # 2. (للتجربة) بنطبع الرابط عشان نتأكد
             st.error(f"⚠️ الرابط المرسل لجوجل هو: {redirect_uri}")
@@ -329,3 +329,4 @@ with tab_clean:
 
 # Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
+
