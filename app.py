@@ -45,16 +45,23 @@ def is_user_active(username):
 
 # --- دوال جوجل (Server Compatible) ---
 # --- التعديل النهائي (Clean Version without Debug) ---
+# --- التعديل الجديد: الاعتماد على session_state بدلاً من الملفات ---
 def get_calendar_service():
     creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-            
+    
+    # 1. محاولة استرجاع التوكن من الذاكرة
+    if 'google_creds' in st.session_state:
+        creds = st.session_state['google_creds']
+    
+    # 2. لو مفيش توكن صالح، نبدأ المصادقة
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+            except:
+                creds = None # لو فشل التجديد، نعيد من الأول
+
+        if not creds:
             flow = Flow.from_client_secrets_file(
                 'credentials.json',
                 scopes=SCOPES,
@@ -65,32 +72,31 @@ def get_calendar_service():
 
             if not auth_code:
                 auth_url, _ = flow.authorization_url(prompt='consent')
-                
-                # --- هنا السر: target="_blank" ---
-                # ده هيخلي الرابط يفتح في صفحة جديدة أوتوماتيك ويحل مشكلة الـ 403
                 st.markdown(f"""
                     <a href="{auth_url}" target="_blank" style="
                         background-color: #4285F4; color: white; padding: 15px 25px; 
                         text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px;
-                        display: block; text-align: center; margin: 20px auto; width: 80%;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        display: block; text-align: center; margin: 20px auto; width: 80%;">
                         👉 اضغط هنا لربط حساب جوجل (نافذة جديدة)
                     </a>
                     <p style="text-align: center; color: gray; font-size: 12px;">
-                        * سيفتح في نافذة جديدة. بعد الموافقة، ارجع لهذه الصفحة.
+                        * بعد الموافقة، ارجع لهذه الصفحة ستجدها تم تحديثها.
                     </p>
                     """, unsafe_allow_html=True)
-                
-                st.warning("⚠️ يجب ربط حساب جوجل للمتابعة. اضغط الزر الأزرق بالأعلى.")
+                st.warning("⚠️ يجب ربط حساب جوجل للمتابعة.")
                 st.stop()
             else:
                 try:
                     flow.fetch_token(code=auth_code)
                     creds = flow.credentials
-                    with open('token.pickle', 'wb') as token:
-                        pickle.dump(creds, token)
-                    # تنظيف الرابط عشان ميفضلش الكود موجود
+                    
+                    # حفظ التوكن في الذاكرة (Session State)
+                    st.session_state['google_creds'] = creds
+                    
+                    # تنظيف الرابط
                     st.query_params.clear()
+                    st.success("تم الربط بنجاح! 🎉")
+                    time.sleep(1)
                     st.rerun()
                 except Exception as e:
                     st.error(f"حدث خطأ في المصادقة: {e}")
@@ -335,6 +341,7 @@ with tab_clean:
 
 # Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
+
 
 
 
