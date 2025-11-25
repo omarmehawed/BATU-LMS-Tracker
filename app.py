@@ -12,15 +12,14 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import time
 import threading
-# --- [كود الطوارئ] مسح التوكن القديم إجبارياً ---
-if os.path.exists('token.pickle'):
-    os.remove('token.pickle')
+import json
+from google.oauth2.credentials import Credentials
 # --- إعدادات عامة (Constants) ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 REDIRECT_URI = "https://batu-lms-tracker.streamlit.app" # تأكد إن الرابط ده مطابق للي في جوجل كونسول
 MY_PORTFOLIO_URL = "https://www.linkedin.com/in/omar-mehawed-861098249/" # حط لينكك هنا
 SESSIONS_FILE = "active_sessions.json"
-
+TOKENS_DB = "user_tokens.json"
 # --- دوال إدارة الجلسات (Memory) ---
 def load_sessions():
     if not os.path.exists(SESSIONS_FILE): return {}
@@ -42,67 +41,79 @@ def remove_session(username):
 def is_user_active(username):
     sessions = load_sessions()
     return username in sessions
+    # --- دوال قاعدة البيانات (DB Functions) ---
+def load_tokens_db():
+    if not os.path.exists(TOKENS_DB): return {}
+    try:
+        with open(TOKENS_DB, "r") as f: return json.load(f)
+    except: return {}
+
+def save_token_to_db(username, creds):
+    db = load_tokens_db()
+    db[username] = json.loads(creds.to_json())
+    with open(TOKENS_DB, "w") as f:
+        json.dump(db, f)
+
+def get_token_from_db(username):
+    db = load_tokens_db()
+    if username in db:
+        info = db[username]
+        return Credentials.from_authorized_user_info(info, SCOPES)
+    return None
+
+def delete_token_from_db(username):
+    db = load_tokens_db()
+    if username in db:
+        del db[username]
+        with open(TOKENS_DB, "w") as f:
+            json.dump(db, f)
 
 # --- دوال جوجل (Server Compatible) ---
 # --- التعديل النهائي (Clean Version without Debug) ---
 # --- التعديل الجديد: الاعتماد على session_state بدلاً من الملفات ---
-def get_calendar_service():
+def get_calendar_service(username_key=None):
     creds = None
-    
-    # 1. محاولة استرجاع التوكن من الذاكرة
-    if 'google_creds' in st.session_state:
-        creds = st.session_state['google_creds']
-    
-    # 2. لو مفيش توكن صالح، نبدأ المصادقة
+    # 1. لو معانا اسم مستخدم، ندور في الداتا بيز
+    if username_key:
+        creds = get_token_from_db(username_key)
+
+    # 2. التحقق والتجديد
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             try:
                 creds.refresh(Request())
+                if username_key: save_token_to_db(username_key, creds)
             except:
-                creds = None # لو فشل التجديد، نعيد من الأول
+                creds = None 
 
         if not creds:
             flow = Flow.from_client_secrets_file(
-                'credentials.json',
-                scopes=SCOPES,
-                redirect_uri=REDIRECT_URI
+                'credentials.json', scopes=SCOPES, redirect_uri=REDIRECT_URI
             )
-
             auth_code = st.query_params.get("code")
-
             if not auth_code:
-               # التعديل: شلنا prompt='consent' عشان ميسألكش كل مرة "هل توافق"
-                auth_url, _ = flow.authorization_url(access_type='offline')
+                auth_url, _ = flow.authorization_url(access_type='offline', prompt='consent')
                 st.markdown(f"""
                     <a href="{auth_url}" target="_blank" style="
-                        background-color: #4285F4; color: white; padding: 15px 25px; 
-                        text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px;
+                        background-color: #4285F4; color: white; padding: 12px 25px; 
+                        text-decoration: none; border-radius: 8px; font-weight: bold;
                         display: block; text-align: center; margin: 20px auto; width: 80%;">
-                        👉 اضغط هنا لربط حساب جوجل (نافذة جديدة)
-                    </a>
-                    <p style="text-align: center; color: gray; font-size: 12px;">
-                        * بعد الموافقة، ارجع لهذه الصفحة ستجدها تم تحديثها.
-                    </p>
-                    """, unsafe_allow_html=True)
+                        👉 اضغط هنا لربط حساب جوجل (Required)
+                    </a>""", unsafe_allow_html=True)
                 st.warning("⚠️ يجب ربط حساب جوجل للمتابعة.")
                 st.stop()
             else:
                 try:
                     flow.fetch_token(code=auth_code)
                     creds = flow.credentials
-                    
-                    # حفظ التوكن في الذاكرة (Session State)
-                    st.session_state['google_creds'] = creds
-                    
-                    # تنظيف الرابط
+                    if username_key:
+                        save_token_to_db(username_key, creds)
                     st.query_params.clear()
-                    st.success("تم الربط بنجاح! 🎉")
                     time.sleep(1)
                     st.rerun()
                 except Exception as e:
-                    st.error(f"حدث خطأ في المصادقة: {e}")
+                    st.error(f"خطأ: {e}")
                     st.stop()
-
     return build('calendar', 'v3', credentials=creds)
 
 # --- دوال المعالجة والتحليل ---
@@ -223,11 +234,10 @@ def check_lms_assignments(username, password):
 # --- وظيفة المراقبة في الخلفية ---
 def run_background_monitor(user, pw, interval_minutes):
     try:
-        if os.path.exists('token.pickle'):
-            with open('token.pickle', 'rb') as token:
-                creds = pickle.load(token)
+        # بنجيب التوكن الخاص باليوزر ده من الداتا بيز
+        creds = get_token_from_db(user)
+        if creds:
             srv = build('calendar', 'v3', credentials=creds)
-            
             while True:
                 if not is_user_active(user): break
                 try:
@@ -279,6 +289,43 @@ with tab_live:
     refresh_rate = st.slider("افحص الموقع كل (دقائق):", 10, 180, 60)
 
     if live_user:
+        # هل اليوزر ده ليه توكن متخزن؟
+        has_token = get_token_from_db(live_user) is not None
+        is_running = is_user_active(live_user)
+
+        if has_token:
+            st.success(f"✅ الحساب ({live_user}) مربوط بجوجل وجاهز.")
+            if st.button("🔄 فك الارتباط (Re-link Google)"):
+                delete_token_from_db(live_user)
+                st.rerun()
+        else:
+            st.info("ℹ️ هذا الحساب غير مربوط بجوجل. سيتم طلب الربط عند البدء.")
+
+        if is_running:
+            sessions = load_sessions()
+            start_time = sessions.get(live_user, {}).get("start_time", "Unknown")
+            st.warning(f"📡 المراقبة تعمل حالياً منذ: {start_time}")
+            if st.button(f"🛑 إيقاف المراقبة"):
+                remove_session(live_user)
+                st.rerun()
+        else:
+            if st.button("ابدأ المراقبة الآن 🚀"):
+                if live_user and live_pass:
+                    try:
+                        # هنا بنبعت اليوزر عشان الدالة تدور على التوكن بتاعه أو تنشئه
+                        srv = get_calendar_service(username_key=live_user)
+                        
+                        now_str = datetime.datetime.now().strftime("%I:%M %p")
+                        save_session(live_user, {"start_time": now_str})
+                        t = threading.Thread(target=run_background_monitor, args=(live_user, live_pass, refresh_rate))
+                        t.daemon = True 
+                        t.start()
+                        st.toast(f"تم التفعيل لـ {live_user}!", icon="📡")
+                        time.sleep(1)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"خطأ: {e}")
+                else: st.error("دخل الباسورد!")
         if is_user_active(live_user):
             sessions = load_sessions()
             start_time = sessions.get(live_user, {}).get("start_time", "Unknown")
@@ -357,6 +404,7 @@ with tab_clean:
 
 # Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
+
 
 
 
