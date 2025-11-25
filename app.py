@@ -73,7 +73,7 @@ def delete_token_from_db(username):
 # --- التعديل الجديد: الاعتماد على session_state بدلاً من الملفات ---
 def get_calendar_service(username_key=None):
     creds = None
-    # 1. لو معانا اسم مستخدم، ندور في الداتا بيز
+    # 1. لو معانا اسم مستخدم، ندور في الداتا بيز الأول
     if username_key:
         creds = get_token_from_db(username_key)
 
@@ -86,59 +86,63 @@ def get_calendar_service(username_key=None):
             except:
                 creds = None 
 
+        # 3. لو مفيش توكن، نطلب إذن جديد
         if not creds:
             flow = Flow.from_client_secrets_file(
-                'credentials.json', scopes=SCOPES, redirect_uri=REDIRECT_URI
+                'credentials.json',
+                scopes=SCOPES,
+                redirect_uri=REDIRECT_URI
             )
+
             auth_code = st.query_params.get("code")
-           if not auth_code:
+
+            if not auth_code:
+                # هنا التعديل: شيلنا prompt='consent' عشان ميسألكش كل مرة
                 auth_url, _ = flow.authorization_url(access_type='offline')
                 
-                # --- تصميم زرار جوجل الاحترافي (شبيه Canva) ---
+                # --- تصميم زرار جوجل الاحترافي (ستايل Canva) ---
                 st.markdown(f"""
                     <style>
                         .google-btn {{
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                            background-color: #131314; /* لون خلفية داكن زي كانفا */
-                            color: white;
-                            border: 1px solid #5f6368;
-                            border-radius: 24px; /* حواف دائرية */
-                            padding: 12px 30px;
+                            background-color: #ffffff; 
+                            color: #1f1f1f;
+                            border: 1px solid #747775;
+                            border-radius: 24px;
+                            padding: 10px 24px;
                             text-decoration: none;
-                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            font-family: 'Google Sans', arial, sans-serif;
                             font-weight: 500;
-                            font-size: 16px;
+                            font-size: 14px;
                             margin: 20px auto;
                             width: fit-content;
-                            transition: background-color 0.3s;
-                            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+                            transition: background-color 0.2s;
+                            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
                         }}
                         .google-btn:hover {{
-                            background-color: #202124;
-                            border-color: #75787c;
-                            color: white;
+                            background-color: #f1f3f4;
+                            border-color: #747775;
+                            color: #1f1f1f;
                             text-decoration: none;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
                         }}
                         .google-icon {{
-                            margin-right: 12px;
-                            background: white;
-                            padding: 2px;
-                            border-radius: 50%;
-                            width: 24px;
-                            height: 24px;
+                            margin-right: 10px;
+                            width: 18px;
+                            height: 18px;
                         }}
                     </style>
                     
                     <div style="text-align: center; margin-top: 20px;">
-                        <p style="color: #888; margin-bottom: 10px;">يجب ربط حسابك للمتابعة</p>
+                        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">يجب ربط حسابك للمتابعة</p>
                         <a href="{auth_url}" target="_blank" class="google-btn">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" class="google-icon">
                             Continue with Google
                         </a>
-                        <p style="color: #555; font-size: 12px; margin-top: 10px;">
-                            (سيفتح في نافذة جديدة، عد إلى هنا بعد الموافقة)
+                        <p style="color: #888; font-size: 11px; margin-top: 12px;">
+                            (سيفتح نافذة جديدة، عد إلى هنا بعد الموافقة)
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -148,14 +152,18 @@ def get_calendar_service(username_key=None):
                 try:
                     flow.fetch_token(code=auth_code)
                     creds = flow.credentials
+                    
                     if username_key:
                         save_token_to_db(username_key, creds)
+                        st.toast(f"تم ربط حساب جوجل بنجاح لـ {username_key}!", icon="✅")
+                    
                     st.query_params.clear()
                     time.sleep(1)
                     st.rerun()
                 except Exception as e:
-                    st.error(f"خطأ: {e}")
+                    st.error(f"خطأ في المصادقة: {e}")
                     st.stop()
+
     return build('calendar', 'v3', credentials=creds)
 
 # --- دوال المعالجة والتحليل ---
@@ -441,5 +449,6 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
