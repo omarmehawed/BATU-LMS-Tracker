@@ -391,39 +391,57 @@ with tab_live:
     else:
         st.caption("👈 اكتب اليوزر عشان نشوف حالتك.")
 
-# 2. Manual Check
+# 2. Manual Check (تعديل: إضافة حالة الربط)
 with tab_manual:
-    with st.form("sync_manual"):
-        m_user = st.text_input("Username", placeholder="2xxxxx@batechu.com")
-        m_pw = st.text_input("Password", type="password")
-        m_sub = st.form_submit_button("Insert Past Assignments")
+    st.info("هنا يمكنك جلب الواجبات القديمة يدوياً.")
     
-    if m_sub and m_user and m_pw:
-        with st.status("Working...", expanded=True):
-            logs, data = check_lms_assignments(m_user, m_pw)
-            for l in logs: 
-                if "❌" in l or "🚫" in l: st.error(l)
-                else: st.text(l)
-            
-            if data:
-                try:
-                    # --- التعديل هنا: بعتنا m_user للدالة عشان تجيب التوكن بتاعه ---
-                    srv = get_calendar_service(username_key=m_user)
-                    
-                    count = 0
-                    for d in data:
-                        s, m = add_event_to_calendar(srv, d['title'], d['release_date'], d['deadline_date'], d['link'])
-                        if s: 
-                            st.success(f"✅ {d['title']}")
-                            count += 1
-                        else: st.error(f"❌ {d['title']} -> {m}")
-                    
-                    if count > 0: st.balloons()
-                except Exception as e:
-                    # لو في مشكلة (زي إنه مش رابط أصلاً) هيظهر رسالة واضحة
-                    st.warning("⚠️ لم يتم العثور على ربط جوجل لهذا الحساب. يرجى الذهاب لتبويب 'Live Tracker' وربط الحساب أولاً.")
-            else:
-                st.warning("No data found.")
+    # 1. الخانات (خليناها بره الفورم عشان تظهر الحالة فوراً)
+    col_m1, col_m2 = st.columns(2)
+    with col_m1: 
+        m_user = st.text_input("Username", placeholder="2xxxxx@batechu.com", key="manual_u")
+    with col_m2: 
+        m_pw = st.text_input("Password", type="password", key="manual_p")
+
+    # 2. (الجزء الجديد) إظهار حالة الربط زي التبويب الأول بالظبط
+    if m_user:
+        # هل اليوزر ده ليه توكن في الداتا بيز؟
+        if get_token_from_db(m_user):
+             st.success(f"✅ الحساب ({m_user}) مربوط بجوجل وجاهز.")
+             # زرار فك الربط لو حبيت تضيفه هنا كمان (اختياري)
+             # if st.button("فك الارتباط", key="unlink_manual"):
+             #    delete_token_from_db(m_user)
+             #    st.rerun()
+        else:
+             st.warning("⚠️ هذا الحساب غير مربوط بجوجل. (يفضل ربطه من تبويب Live Tracker أولاً).")
+
+    # 3. زرار التشغيل
+    if st.button("Insert Past Assignments", key="manual_btn"):
+        if m_user and m_pw:
+            with st.status("Working...", expanded=True):
+                logs, data = check_lms_assignments(m_user, m_pw)
+                for l in logs: 
+                    if "❌" in l or "🚫" in l: st.error(l)
+                    else: st.text(l)
+                
+                if data:
+                    try:
+                        # بنبعت اليوزر عشان يجيب التوكن
+                        srv = get_calendar_service(username_key=m_user)
+                        count = 0
+                        for d in data:
+                            s, m = add_event_to_calendar(srv, d['title'], d['release_date'], d['deadline_date'], d['link'])
+                            if s: 
+                                st.success(f"✅ {d['title']}")
+                                count += 1
+                            else: st.error(f"❌ {d['title']} -> {m}")
+                        
+                        if count > 0: st.balloons()
+                    except Exception as e:
+                        st.error(f"حدث خطأ (تأكد من الربط): {e}")
+                else:
+                    st.warning("No data found.")
+        else:
+            st.error("اكتب البيانات الأول!")
 
 # 3. Clean
 with tab_clean:
@@ -456,6 +474,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
