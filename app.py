@@ -105,7 +105,8 @@ def get_calendar_service(username_key=None):
             if not auth_code:
                 # هنا التعديل: شيلنا prompt='consent' عشان ميسألكش كل مرة
                 auth_url, _ = flow.authorization_url(access_type='offline', prompt='consent')
-                
+                # كود أيقونة جوجل (Base64) عشان تظهر علطول ومتقطعش
+                google_icon_base64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAApgAAAKYB3X3/OAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANCSURBVEiJtZZPbBtFFMcz714j8KDmbiQB69hE3ZhLqOLSXyMHO56o7acqXKMJCpFaenNR4jfgBE756xsPiq8q2ZRLvUEKOrD3Gsz54b6Z3V/7zCrw+q9uk97h5TffvDfz5s289XB8eTxilY0/20ADqD3t3jfM3sZvnKH97jM1s2KacZ58J05+jcXG60DxkM2k81E9wh83jF7d5gI95fPd7L55tyO621hkP38Z58j0HlHnjyYf4f4f4r3d5eT8n8v/Qdgj558raP4DA35Z/r940d/f4l905i86o2q6S0L00x4o99Mre5+2/9MXN2n/5BfT5Rprp119sz3t3k/vcfx0sWb+XJ6Va6S3+r56F+vLdy9sn7+e028/4Ncm5yN63J3XPP7e6vL2OIC8zowZqO0a5h2A464cT52r1j2N8z09z5z3x8c2dyUX3/k590tO9zXn8t/6r4D1a3s630s5f/rJ7r7i1vWnS5R2Xveo496cO9X5q7u3C57v55y5+8r+984e1/l276/Y6W7lX/f0/O/4WjS9t0r/5t52+X+9v1/73C12uV8j14p+pLZaZ8Z47r9D8w642zLg2XvM7+c/6f41O592vUf7u4z39/4/B9sK1l4F2g5g71xg7VNg7VXgSIFm+XP4e5EA1n4d+L4KrD0OnClQ3wHWA2w9Dxw60F4F1q8Ctbf+7q2d31w8Ggx4Avj0HLD2DOC4U88CA3zgKPR8Dw2bDvjGJd+5+Djj9h6sdTb1X4G1a8CLv4H1anIw2Nh7U7UNPLfpMOXD7061OOC78et6+Wk53A4A3N3kdgdIO8wsCFAoB9NCAAgqY0kRB0YvMQwDS9c1M0/gYwO/9gDk/mO6O9hD3u/hX3F2Y50/AMl/3XfIAF/4uU+y+2d2P9n93c8zYlmIIwHgS98PXjM/L+wT/r/09hVb9x0YAAgQLyF1QoB2Jd/63i8uXvFzH2yYf33k/v0v2f35zrnA8SIQ9m8B2g2g0cKz8Wf4d2P0vV1R/A9w/pXfAyfE7zD8/tW7830fO73d8632X2b74oydLe+I67r/g/T4q7wLgPO7Cfb32ItuL6w74Y+iWz/6/Oz3cz7ty1/9fI32x7fFm0s/0f4W/w+s5ODZJ0j9pwAAAABJRU5ErkJggg=="
                 # --- تصميم زرار جوجل الاحترافي (ستايل Canva) ---
                 st.markdown(f"""
                     <style>
@@ -144,7 +145,7 @@ def get_calendar_service(username_key=None):
                     <div style="text-align: center; margin-top: 20px;">
                         <p style="color: #666; margin-bottom: 15px; font-size: 14px;">يجب ربط حسابك للمتابعة</p>
                         <a href="{auth_url}" target="_blank" class="google-btn">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" class="google-icon">
+                            <img src="{google_icon_base64}" class="google-icon">
                             Continue with Google
                         </a>
                         <p style="color: #888; font-size: 11px; margin-top: 12px;">
@@ -455,6 +456,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
