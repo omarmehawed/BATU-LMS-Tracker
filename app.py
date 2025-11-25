@@ -104,7 +104,7 @@ def get_calendar_service(username_key=None):
 
             if not auth_code:
                 # الرابط بدون prompt consent (عشان يدخل علطول)
-                auth_url, _ = flow.authorization_url(access_type='offline')
+                auth_url, _ = flow.authorization_url(access_type='offline', promopt= 'consent')
                 
                 # 🔴 هام: ده رابط الصورة السوداء اللي أنت رفعتها على GitHub
                 # تأكد إن الصورة اللي اسمها google_logo.png في جيت هاب هي صورة الزرار الأسود المستطيل
@@ -457,6 +457,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
