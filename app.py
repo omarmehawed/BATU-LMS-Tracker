@@ -58,7 +58,13 @@ def get_token_from_db(username):
     db = load_tokens_db()
     if username in db:
         info = db[username]
-        return Credentials.from_authorized_user_info(info, SCOPES)
+        try:
+            # بنحاول نقرا التوكن
+            return Credentials.from_authorized_user_info(info, SCOPES)
+        except ValueError:
+            # لو بايظ (زي حالتك دلوقتي) امسحه عشان ميعملش Error
+            delete_token_from_db(username)
+            return None
     return None
 
 def delete_token_from_db(username):
@@ -98,7 +104,7 @@ def get_calendar_service(username_key=None):
 
             if not auth_code:
                 # هنا التعديل: شيلنا prompt='consent' عشان ميسألكش كل مرة
-                auth_url, _ = flow.authorization_url(access_type='offline')
+                auth_url, _ = flow.authorization_url(access_type='offline', prompt='consent')
                 
                 # --- تصميم زرار جوجل الاحترافي (ستايل Canva) ---
                 st.markdown(f"""
@@ -449,6 +455,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
