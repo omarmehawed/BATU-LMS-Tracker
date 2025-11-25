@@ -71,7 +71,8 @@ def get_calendar_service():
             auth_code = st.query_params.get("code")
 
             if not auth_code:
-                auth_url, _ = flow.authorization_url(prompt='consent')
+               # التعديل: شلنا prompt='consent' عشان ميسألكش كل مرة "هل توافق"
+                auth_url, _ = flow.authorization_url(access_type='offline')
                 st.markdown(f"""
                     <a href="{auth_url}" target="_blank" style="
                         background-color: #4285F4; color: white; padding: 15px 25px; 
@@ -356,6 +357,7 @@ with tab_clean:
 
 # Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
+
 
 
 
