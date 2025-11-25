@@ -382,25 +382,3 @@ with tab_clean:
                 st.error(f"حدث خطأ (تأكد أنك قمت بالربط أولاً): {e}")
         else:
             st.error("اكتب اليوزر الأول")
-
-# 3. Clean
-with tab_clean:
-    if st.button("Clean All Events"):
-        # --- التعديل هنا أيضاً ---
-        srv = get_calendar_service()
-        try:
-            c, m = delete_old_events(srv)
-            st.success(m)
-        except Exception as e:
-            st.error(f"حدث خطأ: {e}")
-
-# Footer
-st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
-
-
-
-
-
-
-
-
