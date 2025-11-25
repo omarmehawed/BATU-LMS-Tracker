@@ -103,37 +103,19 @@ def get_calendar_service(username_key=None):
             auth_code = st.query_params.get("code")
 
             if not auth_code:
-                # الرابط بدون prompt consent (عشان يدخل علطول)
-                auth_url, _ = flow.authorization_url(access_type='offline', promopt= 'consent')
-                
-                # 🔴 هام: ده رابط الصورة السوداء اللي أنت رفعتها على GitHub
-                # تأكد إن الصورة اللي اسمها google_logo.png في جيت هاب هي صورة الزرار الأسود المستطيل
+                # هنا التعديل: شيلنا prompt='consent' عشان ميسألكش كل مرة
+                auth_url, _ = flow.authorization_url(access_type='offline', prompt='consent')
+                # كود أيقونة جوجل (Base64) عشان تظهر علطول ومتقطعش
+                # رابط صورة الزرار
                 google_btn_img = "https://raw.githubusercontent.com/omarmehawed/BATU-LMS-Tracker/main/google_logo.png"
                 
-                # --- التغيير هنا: الصورة هي اللي بقت Link ---
+                # --- كود HTML المصحح ---
                 st.markdown(f"""
-                    <div style="
-                        display: flex; 
-                        flex-direction: column; 
-                        align-items: center; 
-                        justify-content: center; 
-                        margin-top: 20px;">
-                        
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px;">
                         <p style="color: #ccc; font-size: 14px; margin-bottom: 15px;">اضغط أدناه لربط التقويم</p>
-                        
                         <a href="{auth_url}" target="_blank">
-                            <img src="{google_btn_img}" style="
-                                width: 200px; /* عرض الصورة */
-                                border-radius: 40px; /* تدويرة الحواف */
-                                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-                                transition: transform 0.2s;
-                                cursor: pointer;
-                            "
-                            onmouseover="this.style.transform='scale(1.02)'"
-                            onmouseout="this.style.transform='scale(1)'"
-                            >
+                            <img src="{google_btn_img}" style="width: 200px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.2s; cursor: pointer;">
                         </a>
-                        
                         <p style="color: #666; font-size: 11px; margin-top: 15px;">(سيفتح نافذة جديدة)</p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -457,6 +439,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
