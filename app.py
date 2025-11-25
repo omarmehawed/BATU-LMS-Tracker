@@ -106,7 +106,7 @@ def get_calendar_service(username_key=None):
                 # هنا التعديل: شيلنا prompt='consent' عشان ميسألكش كل مرة
                 auth_url, _ = flow.authorization_url(access_type='offline', prompt='consent')
                 # كود أيقونة جوجل (Base64) عشان تظهر علطول ومتقطعش
-               google_icon_url = "https://raw.githubusercontent.com/omarmehawed/BATU-LMS-Tracker/main/google_logo.png"
+               google_icon_url = "https://github.com/omarmehawed/BATU-LMS-Tracker/blob/main/google_logo.png"
                 # --- تصميم زرار جوجل الاحترافي (ستايل Canva) ---
                 st.markdown(f"""
                     <style>
@@ -474,6 +474,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
