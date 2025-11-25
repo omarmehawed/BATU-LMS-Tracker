@@ -383,3 +383,19 @@ with tab_clean:
         else:
             st.error("اكتب اليوزر الأول")
 
+# --- إعدادات الفوتر ومعلومات التواصل ---
+# 1. حط رقمك هنا (كود الدولة 20 + رقمك من غير صفر في الأول)
+MY_WHATSAPP = "201xxxxxxxxx"  # <--- امسح x واكتب رقمك الحقيقي هنا
+
+# 2. الفوتر الجديد
+st.markdown(f"""
+<div class="footer">
+    <p style="margin: 0; padding: 0;">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></p>
+    <p style="margin: 5px 0 0 0; font-size: 12px;">
+        Need Help? 
+        <a href="https://wa.me/{MY_WHATSAPP}" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: none;">
+             Contact Me on WhatsApp 💬
+        </a>
+    </p>
+</div>
+""", unsafe_allow_html=True)
