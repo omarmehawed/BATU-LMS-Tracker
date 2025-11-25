@@ -92,7 +92,7 @@ def get_calendar_service(username_key=None):
             )
             auth_code = st.query_params.get("code")
            if not auth_code:
-                auth_url, _ = flow.authorization_url(access_type='offline', prompt='consent')
+                auth_url, _ = flow.authorization_url(access_type='offline')
                 
                 # --- تصميم زرار جوجل الاحترافي (شبيه Canva) ---
                 st.markdown(f"""
@@ -441,4 +441,5 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
