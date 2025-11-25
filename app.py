@@ -54,10 +54,18 @@ def get_calendar_service():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
+            # --- هنا التعديل والحل ---
+            # 1. بنثبت الرابط الأساسي (من غير شرطة في الآخر)
+            redirect_uri = "https://batu-lms-students-tracker.streamlit.app"
+            
+            # 2. (للتجربة) بنطبع الرابط عشان نتأكد
+            st.error(f"⚠️ الرابط المرسل لجوجل هو: {redirect_uri}")
+            st.info("تأكد أن هذا الرابط موجود تماماً في Google Console")
+
             flow = Flow.from_client_secrets_file(
                 'credentials.json',
                 scopes=SCOPES,
-                redirect_uri=REDIRECT_URI
+                redirect_uri=redirect_uri
             )
 
             auth_code = st.query_params.get("code")
@@ -69,7 +77,7 @@ def get_calendar_service():
                         background-color: #4285F4; color: white; padding: 10px 20px; 
                         text-decoration: none; border-radius: 5px; font-weight: bold;
                         display: block; text-align: center; margin: 20px 0;">
-                        👉 اضغط هنا لربط حساب جوجل (Required)
+                        👉 اضغط هنا لربط حساب جوجل
                     </a>
                     """, unsafe_allow_html=True)
                 st.warning("يجب ربط حساب جوجل أولاً للمتابعة.")
@@ -321,6 +329,7 @@ with tab_clean:
 
 # Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
+
 
 
 
