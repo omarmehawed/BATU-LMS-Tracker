@@ -91,16 +91,58 @@ def get_calendar_service(username_key=None):
                 'credentials.json', scopes=SCOPES, redirect_uri=REDIRECT_URI
             )
             auth_code = st.query_params.get("code")
-            if not auth_code:
+           if not auth_code:
                 auth_url, _ = flow.authorization_url(access_type='offline', prompt='consent')
+                
+                # --- تصميم زرار جوجل الاحترافي (شبيه Canva) ---
                 st.markdown(f"""
-                    <a href="{auth_url}" target="_blank" style="
-                        background-color: #4285F4; color: white; padding: 12px 25px; 
-                        text-decoration: none; border-radius: 8px; font-weight: bold;
-                        display: block; text-align: center; margin: 20px auto; width: 80%;">
-                        👉 اضغط هنا لربط حساب جوجل (Required)
-                    </a>""", unsafe_allow_html=True)
-                st.warning("⚠️ يجب ربط حساب جوجل للمتابعة.")
+                    <style>
+                        .google-btn {{
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            background-color: #131314; /* لون خلفية داكن زي كانفا */
+                            color: white;
+                            border: 1px solid #5f6368;
+                            border-radius: 24px; /* حواف دائرية */
+                            padding: 12px 30px;
+                            text-decoration: none;
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            font-weight: 500;
+                            font-size: 16px;
+                            margin: 20px auto;
+                            width: fit-content;
+                            transition: background-color 0.3s;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+                        }}
+                        .google-btn:hover {{
+                            background-color: #202124;
+                            border-color: #75787c;
+                            color: white;
+                            text-decoration: none;
+                        }}
+                        .google-icon {{
+                            margin-right: 12px;
+                            background: white;
+                            padding: 2px;
+                            border-radius: 50%;
+                            width: 24px;
+                            height: 24px;
+                        }}
+                    </style>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <p style="color: #888; margin-bottom: 10px;">يجب ربط حسابك للمتابعة</p>
+                        <a href="{auth_url}" target="_blank" class="google-btn">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" class="google-icon">
+                            Continue with Google
+                        </a>
+                        <p style="color: #555; font-size: 12px; margin-top: 10px;">
+                            (سيفتح في نافذة جديدة، عد إلى هنا بعد الموافقة)
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
                 st.stop()
             else:
                 try:
@@ -399,3 +441,4 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
