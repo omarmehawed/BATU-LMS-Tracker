@@ -56,7 +56,7 @@ def get_calendar_service():
         else:
             # --- هنا التعديل والحل ---
             # 1. بنثبت الرابط الأساسي (من غير شرطة في الآخر)
-            redirect_uri = "https://batu-lms-students-tracker.streamlit.app"
+            redirect_uri = "https://batu-lms-students-tracker.streamlit.app/"
             
             # 2. (للتجربة) بنطبع الرابط عشان نتأكد
             st.error(f"⚠️ الرابط المرسل لجوجل هو: {redirect_uri}")
@@ -260,7 +260,7 @@ tab_live, tab_manual, tab_clean = st.tabs(["🔴 Live Tracker", "🔄 Insert Pas
 with tab_live:
     st.info("أدخل بياناتك لمرة واحدة، وسيقوم النظام بالمتابعة تلقائياً.")
     col_a, col_b = st.columns(2)
-    with col_a: live_user = st.text_input("Username", placeholder="24xxxx@batechu.com", key="live_u")
+    with col_a: live_user = st.text_input("Username", placeholder="2xxxxx@batechu.com", key="live_u")
     with col_b: live_pass = st.text_input("Password", type="password", key="live_p")
     
     refresh_rate = st.slider("افحص الموقع كل (دقائق):", 10, 180, 60)
@@ -298,7 +298,7 @@ with tab_live:
 # Tab 2: Manual Check
 with tab_manual:
     with st.form("sync_manual"):
-        m_user = st.text_input("Username")
+        m_user = st.text_input("Username",placeholder="2xxxxx@batechu.com")
         m_pw = st.text_input("Password", type="password")
         m_sub = st.form_submit_button("Insert Past Assignments")
     if m_sub and m_user and m_pw:
@@ -329,11 +329,3 @@ with tab_clean:
 
 # Footer
 st.markdown(f"""<div class="footer">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></div>""", unsafe_allow_html=True)
-
-
-
-
-
-
-
-
