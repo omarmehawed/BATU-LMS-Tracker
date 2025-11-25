@@ -103,57 +103,40 @@ def get_calendar_service(username_key=None):
             auth_code = st.query_params.get("code")
 
             if not auth_code:
-                # هنا التعديل: شيلنا prompt='consent' عشان ميسألكش كل مرة
-                auth_url, _ = flow.authorization_url(access_type='offline', prompt='consent')
-                # كود أيقونة جوجل (Base64) عشان تظهر علطول ومتقطعش
-                google_icon_url = "https://raw.githubusercontent.com/omarmehawed/BATU-LMS-Tracker/main/google_logo.png"
-                # --- تصميم زرار جوجل الاحترافي (ستايل Canva) ---
+                # الرابط بدون prompt consent (عشان يدخل علطول)
+                auth_url, _ = flow.authorization_url(access_type='offline')
+                
+                # 🔴 هام: ده رابط الصورة السوداء اللي أنت رفعتها على GitHub
+                # تأكد إن الصورة اللي اسمها google_logo.png في جيت هاب هي صورة الزرار الأسود المستطيل
+                google_btn_img = "https://raw.githubusercontent.com/omarmehawed/BATU-LMS-Tracker/main/google_logo.png"
+                
+                # --- التغيير هنا: الصورة هي اللي بقت Link ---
                 st.markdown(f"""
-                    <style>
-                        .google-btn {{
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            background-color: #ffffff; 
-                            color: #1f1f1f;
-                            border: 1px solid #747775;
-                            border-radius: 24px;
-                            padding: 10px 24px;
-                            text-decoration: none;
-                            font-family: 'Google Sans', arial, sans-serif;
-                            font-weight: 500;
-                            font-size: 14px;
-                            margin: 20px auto;
-                            width: fit-content;
-                            transition: background-color 0.2s;
-                            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-                        }}
-                        .google-btn:hover {{
-                            background-color: #f1f3f4;
-                            border-color: #747775;
-                            color: #1f1f1f;
-                            text-decoration: none;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-                        }}
-                        .google-icon {{
-                            margin-right: 10px;
-                            width: 18px;
-                            height: 18px;
-                        }}
-                    </style>
-                    
-                    <div style="text-align: center; margin-top: 20px;">
-                        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">يجب ربط حسابك للمتابعة</p>
-                        <a href="{auth_url}" target="_blank" class="google-btn">
-                            <img src="{google_icon_url}" class="google-icon">
-                            Continue with Google
+                    <div style="
+                        display: flex; 
+                        flex-direction: column; 
+                        align-items: center; 
+                        justify-content: center; 
+                        margin-top: 20px;">
+                        
+                        <p style="color: #ccc; font-size: 14px; margin-bottom: 15px;">اضغط أدناه لربط التقويم</p>
+                        
+                        <a href="{auth_url}" target="_blank">
+                            <img src="{google_btn_img}" style="
+                                width: 200px; /* عرض الصورة */
+                                border-radius: 40px; /* تدويرة الحواف */
+                                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                                transition: transform 0.2s;
+                                cursor: pointer;
+                            "
+                            onmouseover="this.style.transform='scale(1.02)'"
+                            onmouseout="this.style.transform='scale(1)'"
+                            >
                         </a>
-                        <p style="color: #888; font-size: 11px; margin-top: 12px;">
-                            (سيفتح نافذة جديدة، عد إلى هنا بعد الموافقة)
-                        </p>
+                        
+                        <p style="color: #666; font-size: 11px; margin-top: 15px;">(سيفتح نافذة جديدة)</p>
                     </div>
                     """, unsafe_allow_html=True)
-                
                 st.stop()
             else:
                 try:
@@ -474,6 +457,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
