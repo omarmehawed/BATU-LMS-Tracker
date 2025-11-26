@@ -14,70 +14,16 @@ import time
 import threading
 import json
 from google.oauth2.credentials import Credentials
-# --- إعدادات الصفحة والتصميم (شامل الإخفاء الجذري) ---
-st.set_page_config(page_title="BATU LMS", page_icon="🎓", layout="centered")
-
-st.markdown("""
-<style>
-    /* 1. إخفاء القائمة العلوية والفوتر */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* 2. إخفاء زرار الـ Deploy والتاج الأحمر (بكل الطرق الممكنة) */
-    .stAppDeployButton {display: none !important;}
-    [data-testid="stToolbar"] {display: none !important;}
-    [data-testid="stDecoration"] {display: none !important;}
-    [data-testid="stStatusWidget"] {display: none !important;}
-    [class^="stAppDeployButton"] {display: none !important;} /* لأي كلاس بيبدأ بالاسم ده */
-    
-    /* 3. إخفاء الهيدر تماماً للموبايل */
-    div[data-testid="stMobileHeader"] {display: none !important;}
-    
-    /* 4. تنسيق الصور */
-    [data-testid="stImage"] {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    [data-testid="stImage"] img {
-        max-width: 100%;
-        height: auto;
-    }
-
-    /* 5. تنسيق الفوتر الخاص بيك (Z-Index عالي جداً عشان يغطي) */
-    .footer {
-        position: fixed; 
-        left: 0; 
-        bottom: 0; 
-        width: 100%; 
-        background-color: #0e1117; 
-        color: white; 
-        text-align: center; 
-        padding: 10px; 
-        z-index: 999999; /* رقم فلكي عشان يظهر فوق أي حاجة */
-        font-size: 14px; 
-        border-top: 1px solid #333;
-    }
-    .footer a {color: #4ea4f9; text-decoration: none;}
-
-    /* 6. الموبايل */
-    @media (max-width: 768px) {
-        [data-testid="stImage"] img {
-            max-width: 80px !important; 
-            height: auto !important; 
-            margin-bottom: 10px;
-        }
-        h1 { font-size: 1.4rem !important; }
-        /* إخفاء الهيدر في الموبايل عشان مياخدش مساحة */
-        header {display: none !important;}
-        .block-container { 
-            padding-top: 1rem !important; 
-            padding-bottom: 6rem !important; 
-        }
-    }
-</style>
-""", unsafe_allow_html=True)
+# --- إخفاء علامة GitHub والفوتر والقائمة ---
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            .stAppDeployButton {display:none;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- إعدادات عامة (Constants) ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -504,6 +450,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
