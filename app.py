@@ -14,16 +14,61 @@ import time
 import threading
 import json
 from google.oauth2.credentials import Credentials
-# --- إخفاء علامة GitHub والفوتر والقائمة ---
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            .stAppDeployButton {display:none;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+# --- إعدادات الصفحة والتصميم (شامل الإخفاء والتجاوب) ---
+st.set_page_config(page_title="BATU LMS", page_icon="🎓", layout="centered")
+
+st.markdown("""
+<style>
+    /* 1. إخفاء عناصر Streamlit (القائمة، الفوتر، الهيدر، الزرار) */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stAppDeployButton {display: none;}
+    [data-testid="stHeaderActionElements"] {display: none !important;}
+    [data-testid="stDecoration"] {display: none;}
+
+    /* 2. تنسيق الصور (تتوسط الشاشة) */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    [data-testid="stImage"] img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* 3. تنسيق الفوتر الخاص بيك */
+    .footer {
+        position: fixed; 
+        left: 0; 
+        bottom: 0; 
+        width: 100%; 
+        background-color: #0e1117; 
+        color: white; 
+        text-align: center; 
+        padding: 10px; 
+        z-index: 9999; 
+        font-size: 14px; 
+        border-top: 1px solid #333;
+    }
+    .footer a {color: #4ea4f9; text-decoration: none;}
+
+    /* 4. تظبيط الموبايل (Media Query) */
+    @media (max-width: 768px) {
+        [data-testid="stImage"] img {
+            max-width: 80px !important; 
+            height: auto !important; 
+            margin-bottom: 10px;
+        }
+        h1 { font-size: 1.4rem !important; }
+        .block-container { 
+            padding-top: 1rem !important; 
+            padding-bottom: 5rem !important; 
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # --- إعدادات عامة (Constants) ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -450,6 +495,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
