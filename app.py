@@ -14,16 +14,70 @@ import time
 import threading
 import json
 from google.oauth2.credentials import Credentials
-# --- إخفاء علامة GitHub والفوتر والقائمة ---
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            .stAppDeployButton {display:none;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+# --- إعدادات الصفحة والتصميم (شامل الإخفاء القسري) ---
+st.set_page_config(page_title="BATU LMS", page_icon="🎓", layout="centered")
+
+st.markdown("""
+<style>
+    /* 1. إخفاء القائمة العلوية (التلات نقط) */
+    #MainMenu {visibility: hidden;}
+    
+    /* 2. إخفاء الفوتر الأصلي */
+    footer {visibility: hidden;}
+    
+    /* 3. إخفاء الهيدر الملون */
+    header {visibility: hidden;}
+    
+    /* 4. إخفاء زرار Deploy والتاج الأحمر (المهم جداً) */
+    .stAppDeployButton {display: none !important;}
+    [data-testid="stToolbar"] {display: none !important;}
+    [data-testid="stDecoration"] {display: none !important;}
+    [data-testid="stStatusWidget"] {display: none !important;}
+
+    /* 5. تنسيق الصور */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    [data-testid="stImage"] img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* 6. تنسيق الفوتر الخاص بيك */
+    .footer {
+        position: fixed; 
+        left: 0; 
+        bottom: 0; 
+        width: 100%; 
+        background-color: #0e1117; 
+        color: white; 
+        text-align: center; 
+        padding: 10px; 
+        z-index: 99999; /* رقم كبير عشان يغطي على أي حاجة */
+        font-size: 14px; 
+        border-top: 1px solid #333;
+    }
+    .footer a {color: #4ea4f9; text-decoration: none;}
+
+    /* 7. الموبايل */
+    @media (max-width: 768px) {
+        [data-testid="stImage"] img {
+            max-width: 80px !important; 
+            height: auto !important; 
+            margin-bottom: 10px;
+        }
+        h1 { font-size: 1.4rem !important; }
+        /* توسيع المسافة تحت عشان الفوتر ميغطيش على المحتوى */
+        .block-container { 
+            padding-top: 1rem !important; 
+            padding-bottom: 6rem !important; 
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # --- إعدادات عامة (Constants) ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 REDIRECT_URI = "https://batu-lms-tracker.streamlit.app" # تأكد إن الرابط ده مطابق للي في جوجل كونسول
@@ -449,6 +503,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
