@@ -14,6 +14,16 @@ import time
 import threading
 import json
 from google.oauth2.credentials import Credentials
+# --- إخفاء علامة GitHub والفوتر والقائمة ---
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            .stAppDeployButton {display:none;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # --- إعدادات عامة (Constants) ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 REDIRECT_URI = "https://batu-lms-tracker.streamlit.app" # تأكد إن الرابط ده مطابق للي في جوجل كونسول
@@ -439,6 +449,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
