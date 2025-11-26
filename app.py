@@ -16,14 +16,30 @@ import json
 from google.oauth2.credentials import Credentials
 # --- إخفاء علامة GitHub والفوتر والقائمة ---
 hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            .stAppDeployButton {display:none;}
-            </style>
-            """
+# --- إخفاء كل علامات Streamlit (القائمة، الفوتر، وصورتك الشخصية) ---
+hide_streamlit_style = """
+<style>
+    /* إخفاء القائمة الثلاثية (الـ Hamburger Menu) */
+    #MainMenu {visibility: hidden;}
+    
+    /* إخفاء الفوتر (Made with Streamlit) */
+    footer {visibility: hidden;}
+    
+    /* إخفاء الهيدر بالكامل (بما فيه صورتك والزرار اللي بيفتح GitHub) */
+    header {visibility: hidden;}
+    
+    /* إخفاء زرار الـ Deploy لو ظهر */
+    .stAppDeployButton {display: none;}
+    
+    /* إخفاء أي عناصر تحكم علوية إضافية (زي صورتك) */
+    [data-testid="stHeaderActionElements"] {display: none !important;}
+    
+    /* إخفاء التاج الأحمر (Decoration) */
+    [data-testid="stDecoration"] {display: none;}
+</style>
+"""
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # --- إعدادات عامة (Constants) ---
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 REDIRECT_URI = "https://batu-lms-tracker.streamlit.app" # تأكد إن الرابط ده مطابق للي في جوجل كونسول
@@ -449,6 +465,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
