@@ -14,27 +14,27 @@ import time
 import threading
 import json
 from google.oauth2.credentials import Credentials
-# --- إعدادات الصفحة والتصميم (شامل الإخفاء القسري) ---
+# --- إعدادات الصفحة والتصميم (شامل الإخفاء الجذري) ---
 st.set_page_config(page_title="BATU LMS", page_icon="🎓", layout="centered")
 
 st.markdown("""
 <style>
-    /* 1. إخفاء القائمة العلوية (التلات نقط) */
+    /* 1. إخفاء القائمة العلوية والفوتر */
     #MainMenu {visibility: hidden;}
-    
-    /* 2. إخفاء الفوتر الأصلي */
     footer {visibility: hidden;}
-    
-    /* 3. إخفاء الهيدر الملون */
     header {visibility: hidden;}
     
-    /* 4. إخفاء زرار Deploy والتاج الأحمر (المهم جداً) */
+    /* 2. إخفاء زرار الـ Deploy والتاج الأحمر (بكل الطرق الممكنة) */
     .stAppDeployButton {display: none !important;}
     [data-testid="stToolbar"] {display: none !important;}
     [data-testid="stDecoration"] {display: none !important;}
     [data-testid="stStatusWidget"] {display: none !important;}
-
-    /* 5. تنسيق الصور */
+    [class^="stAppDeployButton"] {display: none !important;} /* لأي كلاس بيبدأ بالاسم ده */
+    
+    /* 3. إخفاء الهيدر تماماً للموبايل */
+    div[data-testid="stMobileHeader"] {display: none !important;}
+    
+    /* 4. تنسيق الصور */
     [data-testid="stImage"] {
         display: flex;
         justify-content: center;
@@ -45,7 +45,7 @@ st.markdown("""
         height: auto;
     }
 
-    /* 6. تنسيق الفوتر الخاص بيك */
+    /* 5. تنسيق الفوتر الخاص بيك (Z-Index عالي جداً عشان يغطي) */
     .footer {
         position: fixed; 
         left: 0; 
@@ -55,13 +55,13 @@ st.markdown("""
         color: white; 
         text-align: center; 
         padding: 10px; 
-        z-index: 99999; /* رقم كبير عشان يغطي على أي حاجة */
+        z-index: 999999; /* رقم فلكي عشان يظهر فوق أي حاجة */
         font-size: 14px; 
         border-top: 1px solid #333;
     }
     .footer a {color: #4ea4f9; text-decoration: none;}
 
-    /* 7. الموبايل */
+    /* 6. الموبايل */
     @media (max-width: 768px) {
         [data-testid="stImage"] img {
             max-width: 80px !important; 
@@ -69,7 +69,8 @@ st.markdown("""
             margin-bottom: 10px;
         }
         h1 { font-size: 1.4rem !important; }
-        /* توسيع المسافة تحت عشان الفوتر ميغطيش على المحتوى */
+        /* إخفاء الهيدر في الموبايل عشان مياخدش مساحة */
+        header {display: none !important;}
         .block-container { 
             padding-top: 1rem !important; 
             padding-bottom: 6rem !important; 
@@ -503,6 +504,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
