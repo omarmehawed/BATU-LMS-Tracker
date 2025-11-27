@@ -183,52 +183,79 @@ def add_event_to_calendar(service, full_title, release_date, deadline_date, link
     except Exception as e: return False, str(e)
 
 # --- دالة الحذف المحسنة (مع شريط التقدم) ---
+# --- دالة الحذف المحسنة (عداد حقيقي) ---
 def delete_old_events(service):
     try:
         total_deleted = 0
         page_token = None
         
-        progress_text = "جاري البحث والمسح..."
-        my_bar = st.progress(0, text=progress_text)
-
+        # مكان فاضي عشان نكتب فيه حالة المسح لحظة بلحظة
+        status_text = st.empty()
+        
         while True:
-            # بنطلب صفحة من جوجل
+            # 1. هات قائمة الايفنتات (صفحة بصفحة)
             events_result = service.events().list(
                 calendarId='primary',
-                q='BATU Bot', # كلمة السر
+                q='BATU Bot', # بنبحث عن أي حاجة البوت عملها
                 singleEvents=True,
-                pageToken=page_token # عشان يجيب الصفحة اللي عليها الدور
+                pageToken=page_token
             ).execute()
 
             events = events_result.get('items', [])
-            if not events: break # لو مفيش حاجة تانية، اخرج
+            
+            # لو مفيش حاجة خالص في الصفحة دي
+            if not events and total_deleted == 0:
+                return 0, "الكاليندر نظيفة تماماً! ✨"
+            
+            if not events:
+                break # خلصنا كل الصفحات
 
-            # مسح المجموعة الحالية
-            batch_count = len(events)
-            for i, event in enumerate(events):
+            # 2. ابدأ المسح والعد
+            for event in events:
                 try:
                     service.events().delete(calendarId='primary', eventId=event['id']).execute()
                     total_deleted += 1
-                    
-                    # تحديث الشريط (شكل جمالي)
-                    prog = int(((i + 1) / batch_count) * 100)
-                    my_bar.progress(prog, text=f"تم حذف {total_deleted} عنصر حتى الآن...")
+                    # تحديث العداد قدام عينك
+                    status_text.info(f"جاري مسح الايفنت رقم: {total_deleted}...")
                 except:
-                    pass
+                    pass # لو واحد علق سيبه وكمل
 
-            # هل في صفحات تانية؟
+            # 3. هل فيه صفحات تانية مخفية؟
             page_token = events_result.get('nextPageToken')
-            if not page_token: break # لو مفيش صفحات تانية، خلصنا
-        
-        my_bar.empty()
-        
-        if total_deleted == 0:
-            return 0, "الكاليندر نظيفة تماماً! ✨"
-        
-        return total_deleted, f"تم نسف {total_deleted} ايفنت بنجاح! 🧹"
+            if not page_token:
+                break # مفيش صفحات تانية، اخرج من اللوب
+
+        status_text.empty() # شيل رسالة "جاري المسح"
+        return total_deleted, f"تم تنظيف الكاليندر! حذفتلك {total_deleted} ايفنت بنجاح 🧹"
 
     except Exception as e:
-        return -1, f"خطأ: {str(e)}"
+        return -1, f"حدث خطأ في الاتصال: {str(e)}"
+
+# ... (باقي الكود زي ما هو لحد Tab 3) ...
+
+# 3. Clean Tab (الواجهة)
+with tab_clean:
+    c_user = st.text_input("Username للتنظيف", placeholder="2xxxxx@batechu.com")
+    
+    if st.button("Clean All Events", key="clean_btn"):
+        if c_user:
+            try:
+                # لازم نبعت اليوزر عشان يجيب التوكن بتاعه ويمسح من الكاليندر بتاعته هو
+                srv = get_calendar_service(username_key=c_user)
+                
+                c, m = delete_old_events(srv)
+                
+                if c > 0:
+                    st.success(m)
+                    st.balloons()
+                elif c == 0:
+                    st.info(m)
+                else:
+                    st.error(m)
+            except Exception as e:
+                st.error(f"حدث خطأ: {e}")
+        else:
+            st.error("اكتب اليوزر الأول عشان أعرف أمسح من عند مين!")
 
 # --- دالة السكرابينج (Scraping) ---
 def check_lms_assignments(username, password):
@@ -502,6 +529,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
