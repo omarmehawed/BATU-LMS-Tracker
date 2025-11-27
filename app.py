@@ -182,15 +182,43 @@ def add_event_to_calendar(service, full_title, release_date, deadline_date, link
         return True, "تمت الإضافة"
     except Exception as e: return False, str(e)
 
+# --- دالة الحذف المحسنة (مع شريط التقدم) ---
 def delete_old_events(service):
     try:
-        events_result = service.events().list(calendarId='primary', q='BATU Bot', singleEvents=True).execute()
+        # 1. هات كل الايفنتات الخاصة بالبوت
+        events_result = service.events().list(
+            calendarId='primary', 
+            q='BATU Bot', # كلمة السر بتاعتنا
+            singleEvents=True
+        ).execute()
+        
         events = events_result.get('items', [])
-        if not events: return 0, "نظيف"
-        for event in events:
-            service.events().delete(calendarId='primary', eventId=event['id']).execute()
-        return len(events), "تم الحذف"
-    except: return 0, "خطأ"
+        
+        if not events:
+            return 0, "الكاليندر نظيفة تماماً! ✨"
+            
+        # 2. إعداد شريط التحميل
+        progress_text = "جاري المسح..."
+        my_bar = st.progress(0, text=progress_text)
+        total = len(events)
+        count = 0
+        
+        # 3. الحذف واحد واحد
+        for i, event in enumerate(events):
+            try:
+                service.events().delete(calendarId='primary', eventId=event['id']).execute()
+                count += 1
+                # تحديث الشريط
+                percent = int(((i + 1) / total) * 100)
+                my_bar.progress(percent, text=f"جاري حذف {i+1} من {total}...")
+            except:
+                pass # لو ايفنت معلق سيبه وكمل
+        
+        my_bar.empty() # اخفي الشريط لما يخلص
+        return count, f"تم حذف {count} ايفنت بنجاح! 🧹"
+
+    except Exception as e:
+        return -1, f"خطأ في الاتصال: {str(e)}"
 
 # --- دالة السكرابينج (Scraping) ---
 def check_lms_assignments(username, password):
@@ -418,20 +446,35 @@ with tab_manual:
         else:
             st.error("اكتب البيانات الأول!")
 
-# 3. Clean
+# 3. Clean Tab (الواجهة الجديدة)
 with tab_clean:
+    st.info("هذه الأداة تحذف فقط الأحداث التي أضافها البوت (لن تحذف مواعيدك الشخصية).")
+    
     c_user = st.text_input("Username للتنظيف", placeholder="2xxxxx@batechu.com")
-    if st.button("Clean All Events", key="clean_btn"):
+    
+    if st.button("🗑️ Clean All Events", type="primary"):
         if c_user:
-            try:
-                # --- وهنا كمان: بعتنا c_user ---
-                srv = get_calendar_service(username_key=c_user)
-                c, m = delete_old_events(srv)
-                st.success(m)
-            except Exception as e:
-                st.error(f"حدث خطأ (تأكد أنك قمت بالربط أولاً): {e}")
+            # التأكد من وجود توكن
+            if not get_token_from_db(c_user):
+                st.error("⚠️ هذا الحساب غير مربوط. يرجى ربطه من Live Tracker أولاً.")
+            else:
+                try:
+                    with st.spinner('جاري الاتصال بجوجل وحصر الواجبات...'):
+                        srv = get_calendar_service(username_key=c_user)
+                        count, msg = delete_old_events(srv)
+                    
+                    if count == -1:
+                        st.error(msg) # رسالة حمراء لو فيه خطأ حقيقي
+                    elif count == 0:
+                        st.info(msg)  # رسالة زرقاء لو مفيش حاجة
+                    else:
+                        st.success(msg) # رسالة خضراء لما ينجح
+                        st.balloons()
+                        
+                except Exception as e:
+                    st.error(f"حدث خطأ غير متوقع: {e}")
         else:
-            st.error("اكتب اليوزر الأول")
+            st.warning("اكتب اليوزر نيم الأول يا هندسة!")
 
 # --- إعدادات الفوتر ومعلومات التواصل ---
 # 1. حط رقمك هنا (كود الدولة 20 + رقمك من غير صفر في الأول)
@@ -449,6 +492,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
