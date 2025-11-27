@@ -231,32 +231,6 @@ def delete_old_events(service):
     except Exception as e:
         return -1, f"حدث خطأ في الاتصال: {str(e)}"
 
-# ... (باقي الكود زي ما هو لحد Tab 3) ...
-
-# 3. Clean Tab (الواجهة)
-with tab_clean:
-    c_user = st.text_input("Username للتنظيف", placeholder="2xxxxx@batechu.com")
-    
-    if st.button("Clean All Events", key="clean_btn"):
-        if c_user:
-            try:
-                # لازم نبعت اليوزر عشان يجيب التوكن بتاعه ويمسح من الكاليندر بتاعته هو
-                srv = get_calendar_service(username_key=c_user)
-                
-                c, m = delete_old_events(srv)
-                
-                if c > 0:
-                    st.success(m)
-                    st.balloons()
-                elif c == 0:
-                    st.info(m)
-                else:
-                    st.error(m)
-            except Exception as e:
-                st.error(f"حدث خطأ: {e}")
-        else:
-            st.error("اكتب اليوزر الأول عشان أعرف أمسح من عند مين!")
-
 # --- دالة السكرابينج (Scraping) ---
 def check_lms_assignments(username, password):
     chrome_options = Options()
@@ -483,35 +457,29 @@ with tab_manual:
         else:
             st.error("اكتب البيانات الأول!")
 
-# 3. Clean Tab (الواجهة الجديدة)
+# 3. Clean Tab (الواجهة)
 with tab_clean:
-    st.info("هذه الأداة تحذف فقط الأحداث التي أضافها البوت (لن تحذف مواعيدك الشخصية).")
-    
     c_user = st.text_input("Username للتنظيف", placeholder="2xxxxx@batechu.com")
     
-    if st.button("🗑️ Clean All Events", type="primary"):
+    if st.button("Clean All Events", key="clean_btn"):
         if c_user:
-            # التأكد من وجود توكن
-            if not get_token_from_db(c_user):
-                st.error("⚠️ هذا الحساب غير مربوط. يرجى ربطه من Live Tracker أولاً.")
-            else:
-                try:
-                    with st.spinner('جاري الاتصال بجوجل وحصر الواجبات...'):
-                        srv = get_calendar_service(username_key=c_user)
-                        count, msg = delete_old_events(srv)
-                    
-                    if count == -1:
-                        st.error(msg) # رسالة حمراء لو فيه خطأ حقيقي
-                    elif count == 0:
-                        st.info(msg)  # رسالة زرقاء لو مفيش حاجة
-                    else:
-                        st.success(msg) # رسالة خضراء لما ينجح
-                        st.balloons()
-                        
-                except Exception as e:
-                    st.error(f"حدث خطأ غير متوقع: {e}")
+            try:
+                # لازم نبعت اليوزر عشان يجيب التوكن بتاعه ويمسح من الكاليندر بتاعته هو
+                srv = get_calendar_service(username_key=c_user)
+                
+                c, m = delete_old_events(srv)
+                
+                if c > 0:
+                    st.success(m)
+                    st.balloons()
+                elif c == 0:
+                    st.info(m)
+                else:
+                    st.error(m)
+            except Exception as e:
+                st.error(f"حدث خطأ: {e}")
         else:
-            st.warning("اكتب اليوزر نيم الأول يا هندسة!")
+            st.error("اكتب اليوزر الأول عشان أعرف أمسح من عند مين!")
 
 # --- إعدادات الفوتر ومعلومات التواصل ---
 # 1. حط رقمك هنا (كود الدولة 20 + رقمك من غير صفر في الأول)
@@ -529,6 +497,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
