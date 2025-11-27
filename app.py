@@ -183,50 +183,64 @@ def add_event_to_calendar(service, full_title, release_date, deadline_date, link
     except Exception as e: return False, str(e)
 
 # --- دالة الحذف المحسنة (مع شريط التقدم) ---
-# --- دالة الحذف المحسنة (عداد حقيقي) ---
+# --- دالة الحذف المحسنة (تعد الواجبات الأصلية فقط) ---
 def delete_old_events(service):
     try:
-        total_deleted = 0
+        unique_assignments = set() # قائمة لتخزين أسماء الواجبات الفريدة
         page_token = None
         
-        # مكان فاضي عشان نكتب فيه حالة المسح لحظة بلحظة
         status_text = st.empty()
-        
+        progress_bar = st.progress(0, text="جاري البحث...")
+
+        # 1. تجميع كل الايفنتات الأول
+        all_events = []
         while True:
-            # 1. هات قائمة الايفنتات (صفحة بصفحة)
             events_result = service.events().list(
                 calendarId='primary',
-                q='BATU Bot', # بنبحث عن أي حاجة البوت عملها
-                singleEvents=True,
+                q='BATU Bot', 
+                singleEvents=True, # لازم دي عشان يجيب كل التكرارات ويمسحها
                 pageToken=page_token
             ).execute()
 
-            events = events_result.get('items', [])
+            batch = events_result.get('items', [])
+            all_events.extend(batch)
             
-            # لو مفيش حاجة خالص في الصفحة دي
-            if not events and total_deleted == 0:
-                return 0, "الكاليندر نظيفة تماماً! ✨"
-            
-            if not events:
-                break # خلصنا كل الصفحات
-
-            # 2. ابدأ المسح والعد
-            for event in events:
-                try:
-                    service.events().delete(calendarId='primary', eventId=event['id']).execute()
-                    total_deleted += 1
-                    # تحديث العداد قدام عينك
-                    status_text.info(f"جاري مسح الايفنت رقم: {total_deleted}...")
-                except:
-                    pass # لو واحد علق سيبه وكمل
-
-            # 3. هل فيه صفحات تانية مخفية؟
             page_token = events_result.get('nextPageToken')
-            if not page_token:
-                break # مفيش صفحات تانية، اخرج من اللوب
+            if not page_token: break
+        
+        if not all_events:
+            progress_bar.empty()
+            return 0, "الكاليندر نظيفة تماماً! ✨"
 
-        status_text.empty() # شيل رسالة "جاري المسح"
-        return total_deleted, f"تم تنظيف الكاليندر! حذفتلك {total_deleted} ايفنت بنجاح 🧹"
+        # 2. الحذف والعد الذكي
+        total_items = len(all_events)
+        
+        for i, event in enumerate(all_events):
+            try:
+                # الحذف الفعلي
+                service.events().delete(calendarId='primary', eventId=event['id']).execute()
+                
+                # --- هنا التعديل: بناخد الاسم عشان نعده مرة واحدة بس ---
+                # اسم الايفنت بيكون: "📘 Course : Assignment Name"
+                # هناخد الاسم كامل كبصمة
+                assignment_title = event.get('summary', 'Unknown')
+                unique_assignments.add(assignment_title)
+                
+                # تحديث الشريط
+                prog = int(((i + 1) / total_items) * 100)
+                status_text.info(f"جاري تنظيف: {assignment_title}...")
+                progress_bar.progress(prog, text=f"تم مسح {len(unique_assignments)} واجب أساسي...")
+                
+            except:
+                pass
+
+        status_text.empty()
+        progress_bar.empty()
+        
+        # الرقم النهائي هو عدد الأسماء الفريدة في القائمة
+        real_count = len(unique_assignments)
+        
+        return real_count, f"تم تنظيف الكاليندر! حذفتلك {real_count} واجب (بكل أيام تكرارهم) بنجاح 🧹"
 
     except Exception as e:
         return -1, f"حدث خطأ في الاتصال: {str(e)}"
@@ -497,6 +511,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
