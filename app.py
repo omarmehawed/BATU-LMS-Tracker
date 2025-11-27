@@ -185,40 +185,50 @@ def add_event_to_calendar(service, full_title, release_date, deadline_date, link
 # --- دالة الحذف المحسنة (مع شريط التقدم) ---
 def delete_old_events(service):
     try:
-        # 1. هات كل الايفنتات الخاصة بالبوت
-        events_result = service.events().list(
-            calendarId='primary', 
-            q='BATU Bot', # كلمة السر بتاعتنا
-            singleEvents=True
-        ).execute()
+        total_deleted = 0
+        page_token = None
         
-        events = events_result.get('items', [])
-        
-        if not events:
-            return 0, "الكاليندر نظيفة تماماً! ✨"
-            
-        # 2. إعداد شريط التحميل
-        progress_text = "جاري المسح..."
+        progress_text = "جاري البحث والمسح..."
         my_bar = st.progress(0, text=progress_text)
-        total = len(events)
-        count = 0
+
+        while True:
+            # بنطلب صفحة من جوجل
+            events_result = service.events().list(
+                calendarId='primary',
+                q='BATU Bot', # كلمة السر
+                singleEvents=True,
+                pageToken=page_token # عشان يجيب الصفحة اللي عليها الدور
+            ).execute()
+
+            events = events_result.get('items', [])
+            if not events: break # لو مفيش حاجة تانية، اخرج
+
+            # مسح المجموعة الحالية
+            batch_count = len(events)
+            for i, event in enumerate(events):
+                try:
+                    service.events().delete(calendarId='primary', eventId=event['id']).execute()
+                    total_deleted += 1
+                    
+                    # تحديث الشريط (شكل جمالي)
+                    prog = int(((i + 1) / batch_count) * 100)
+                    my_bar.progress(prog, text=f"تم حذف {total_deleted} عنصر حتى الآن...")
+                except:
+                    pass
+
+            # هل في صفحات تانية؟
+            page_token = events_result.get('nextPageToken')
+            if not page_token: break # لو مفيش صفحات تانية، خلصنا
         
-        # 3. الحذف واحد واحد
-        for i, event in enumerate(events):
-            try:
-                service.events().delete(calendarId='primary', eventId=event['id']).execute()
-                count += 1
-                # تحديث الشريط
-                percent = int(((i + 1) / total) * 100)
-                my_bar.progress(percent, text=f"جاري حذف {i+1} من {total}...")
-            except:
-                pass # لو ايفنت معلق سيبه وكمل
+        my_bar.empty()
         
-        my_bar.empty() # اخفي الشريط لما يخلص
-        return count, f"تم حذف {count} ايفنت بنجاح! 🧹"
+        if total_deleted == 0:
+            return 0, "الكاليندر نظيفة تماماً! ✨"
+        
+        return total_deleted, f"تم نسف {total_deleted} ايفنت بنجاح! 🧹"
 
     except Exception as e:
-        return -1, f"خطأ في الاتصال: {str(e)}"
+        return -1, f"خطأ: {str(e)}"
 
 # --- دالة السكرابينج (Scraping) ---
 def check_lms_assignments(username, password):
@@ -492,6 +502,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
