@@ -399,7 +399,7 @@ def send_admin_alarm(error_msg):
         
 # --- واجهة المستخدم (UI) ---
 st.set_page_config(page_title="BATU-NOTIF-LMS", page_icon="logo.png", layout="centered")
-
+try:
 st.markdown("""
 <style>
     [data-testid="stImage"] {display: flex; justify-content: center; align-items: center;}
@@ -583,4 +583,5 @@ except Exception as e:
     send_admin_alarm(str(e))
     # وبعدين نستدعي صفحة الصيانة
     show_maintenance_mode()
+
 
