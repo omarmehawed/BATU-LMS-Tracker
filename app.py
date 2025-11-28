@@ -423,175 +423,120 @@ try:
     </style>
     """, unsafe_allow_html=True)
 
-# Header
-col1, col2, col3 = st.columns([1, 3, 1])
-with col1:
-    if os.path.exists("uni_logo.png"): st.image("uni_logo.png", use_container_width=True)
-with col3:
-    if os.path.exists("it_logo.png"): st.image("it_logo.png", use_container_width=True)
-with col2:
-    st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>BATU Notification LMS</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray; margin-top: 0;'>نظام إشعارات تلقائي للجامعة</p>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col1:
+        if os.path.exists("uni_logo.png"): st.image("uni_logo.png", use_container_width=True)
+    with col3:
+        if os.path.exists("it_logo.png"): st.image("it_logo.png", use_container_width=True)
+    with col2:
+        st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>BATU Notification LMS</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; margin-top: 0;'>نظام إشعارات تلقائي للجامعة</p>", unsafe_allow_html=True)
 
-# Tabs
-tab_live, tab_manual, tab_clean = st.tabs(["🔴 Live Tracker", "🔄 Insert Past", "🗑️ Clean"])
+    tab_live, tab_manual, tab_clean = st.tabs(["🔴 Live Tracker", "🔄 Insert Past", "🗑️ Clean"])
 
-# Tab 1: Live Tracker
-# 1. Live Tracker
-with tab_live:
-    st.info("أدخل بياناتك لمرة واحدة، وسيقوم النظام بالمتابعة تلقائياً.")
-    col_a, col_b = st.columns(2)
-    with col_a: live_user = st.text_input("Username", placeholder="24xxxx@batechu.com", key="live_u")
-    with col_b: live_pass = st.text_input("Password", type="password", key="live_p")
-    
-    refresh_rate = st.slider("افحص الموقع كل (دقائق):", 60, 180, 60, step=60)
-    
-    if live_user:
-        # هل اليوزر ده ليه توكن متخزن؟
-        has_token = get_token_from_db(live_user) is not None
-        # هل اليوزر ده مشغل مراقبة؟
-        is_running = is_user_active(live_user)
+    # 1. Live Tracker
+    with tab_live:
+        st.info("أدخل بياناتك لمرة واحدة، وسيقوم النظام بالمتابعة تلقائياً.")
+        col_a, col_b = st.columns(2)
+        with col_a: live_user = st.text_input("Username", placeholder="2xxxxx@batechu.com", key="live_u")
+        with col_b: live_pass = st.text_input("Password", type="password", key="live_p")
+        refresh_rate = st.slider("افحص الموقع كل (دقائق):", 60, 180, 60, step=60)
 
-        if has_token:
-            st.success(f"✅ الحساب ({live_user}) مربوط بجوجل وجاهز.")
-            # ضفنا key هنا
-            if st.button("🔄 فك الارتباط (Re-link Google)", key="relink_btn_unique"):
-                delete_token_from_db(live_user)
-                st.rerun()
+        if live_user:
+            has_token = get_token_from_db(live_user) is not None
+            is_running = is_user_active(live_user)
+            if has_token:
+                st.success(f"✅ الحساب ({live_user}) مربوط بجوجل وجاهز.")
+                if st.button("🔄 فك الارتباط (Re-link Google)", key="relink_btn"):
+                    delete_token_from_db(live_user)
+                    st.rerun()
+            else:
+                st.info("ℹ️ هذا الحساب غير مربوط بجوجل. سيتم طلب الربط عند البدء.")
+
+            if is_running:
+                sessions = load_sessions()
+                start_time = sessions.get(live_user, {}).get("start_time", "Unknown")
+                st.warning(f"📡 المراقبة تعمل حالياً منذ: {start_time}")
+                if st.button(f"🛑 إيقاف المراقبة", key="stop_btn"):
+                    remove_session(live_user)
+                    st.rerun()
+            else:
+                if st.button("ابدأ المراقبة الآن 🚀", key="start_btn"):
+                    if live_user and live_pass:
+                        try:
+                            srv = get_calendar_service(username_key=live_user)
+                            now_str = datetime.datetime.now().strftime("%I:%M %p")
+                            save_session(live_user, {"start_time": now_str})
+                            t = threading.Thread(target=run_background_monitor, args=(live_user, live_pass, refresh_rate))
+                            t.daemon = True 
+                            t.start()
+                            st.toast(f"تم التفعيل لـ {live_user}!", icon="📡")
+                            time.sleep(1)
+                            st.rerun()
+                        except Exception as e: pass
+                    else: st.error("دخل الباسورد!")
         else:
-            st.info("ℹ️ هذا الحساب غير مربوط بجوجل. سيتم طلب الربط عند البدء.")
+            st.caption("👈 اكتب اليوزر عشان نشوف حالتك.")
 
-        if is_running:
-            sessions = load_sessions()
-            start_time = sessions.get(live_user, {}).get("start_time", "Unknown")
-            st.warning(f"📡 المراقبة تعمل حالياً منذ: {start_time}")
-            # ضفنا key هنا
-            if st.button(f"🛑 إيقاف المراقبة", key="stop_btn_unique"):
-                remove_session(live_user)
-                st.rerun()
-        else:
-            # ضفنا key هنا (وده اللي كان مطلع الايرور عندك)
-            if st.button("ابدأ المراقبة الآن 🚀", key="start_btn_unique"):
-                if live_user and live_pass:
-                    try:
-                        # هنا بنبعت اليوزر عشان الدالة تدور على التوكن بتاعه أو تنشئه
-                        srv = get_calendar_service(username_key=live_user)
-                        
-                        now_str = datetime.datetime.now().strftime("%I:%M %p")
-                        save_session(live_user, {"start_time": now_str})
-                        t = threading.Thread(target=run_background_monitor, args=(live_user, live_pass, refresh_rate))
-                        t.daemon = True 
-                        t.start()
-                        st.toast(f"تم التفعيل لـ {live_user}!", icon="📡")
-                        time.sleep(1)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"خطأ: {e}")
-                else: st.error("دخل الباسورد!")
-    else:
-        st.caption("👈 اكتب اليوزر عشان نشوف حالتك.")
+    # 2. Manual Check
+    with tab_manual:
+        st.info("هنا يمكنك جلب الواجبات القديمة يدوياً.")
+        col_m1, col_m2 = st.columns(2)
+        with col_m1: m_user = st.text_input("Username", placeholder="2xxxxx@batechu.com", key="manual_u")
+        with col_m2: m_pw = st.text_input("Password", type="password", key="manual_p")
+        
+        if m_user:
+            if get_token_from_db(m_user): st.success(f"✅ الحساب ({m_user}) مربوط وجاهز.")
+            else: st.warning("⚠️ هذا الحساب غير مربوط بجوجل.")
 
-# 2. Manual Check (تعديل: إضافة حالة الربط)
-with tab_manual:
-    st.info("هنا يمكنك جلب الواجبات القديمة يدوياً.")
-    
-    # 1. الخانات (خليناها بره الفورم عشان تظهر الحالة فوراً)
-    col_m1, col_m2 = st.columns(2)
-    with col_m1: 
-        m_user = st.text_input("Username", placeholder="2xxxxx@batechu.com", key="manual_u")
-    with col_m2: 
-        m_pw = st.text_input("Password", type="password", key="manual_p")
+        if st.button("Insert Past Assignments", key="manual_btn"):
+            if m_user and m_pw:
+                with st.status("Working...", expanded=True):
+                    logs, data = check_lms_assignments(m_user, m_pw)
+                    for l in logs: 
+                        if "❌" in l or "🚫" in l: st.error(l)
+                        else: st.text(l)
+                    if data:
+                        try:
+                            srv = get_calendar_service(username_key=m_user)
+                            count = 0
+                            for d in data:
+                                s, m = add_event_to_calendar(srv, d['title'], d['release_date'], d['deadline_date'], d['link'])
+                                if s: 
+                                    st.success(f"✅ {d['title']}")
+                                    count += 1
+                                else: st.error(f"❌ {d['title']} -> {m}")
+                            if count > 0: st.balloons()
+                        except: st.error("تأكد من ربط حساب جوجل.")
+                    else: st.warning("No data found.")
+            else: st.error("اكتب البيانات!")
 
-    # 2. (الجزء الجديد) إظهار حالة الربط زي التبويب الأول بالظبط
-    if m_user:
-        # هل اليوزر ده ليه توكن في الداتا بيز؟
-        if get_token_from_db(m_user):
-             st.success(f"✅ الحساب ({m_user}) مربوط بجوجل وجاهز.")
-             # زرار فك الربط لو حبيت تضيفه هنا كمان (اختياري)
-             # if st.button("فك الارتباط", key="unlink_manual"):
-             #    delete_token_from_db(m_user)
-             #    st.rerun()
-        else:
-             st.warning("⚠️ هذا الحساب غير مربوط بجوجل.")
+    # 3. Clean
+    with tab_clean:
+        c_user = st.text_input("Username للتنظيف", placeholder="2xxxxx@batechu.com")
+        if st.button("Clean All Events", key="clean_btn"):
+            if c_user:
+                try:
+                    srv = get_calendar_service(username_key=c_user)
+                    c, m = delete_old_events(srv)
+                    if c > 0:
+                        st.success(m)
+                        st.balloons()
+                    elif c == 0: st.info(m)
+                    else: st.error(m)
+                except Exception as e: st.error(f"حدث خطأ: {e}")
+            else: st.error("اكتب اليوزر الأول")
 
-    # 3. زرار التشغيل
-    if st.button("Insert Past Assignments", key="manual_btn"):
-        if m_user and m_pw:
-            with st.status("Working...", expanded=True):
-                logs, data = check_lms_assignments(m_user, m_pw)
-                for l in logs: 
-                    if "❌" in l or "🚫" in l: st.error(l)
-                    else: st.text(l)
-                
-                if data:
-                    try:
-                        # بنبعت اليوزر عشان يجيب التوكن
-                        srv = get_calendar_service(username_key=m_user)
-                        count = 0
-                        for d in data:
-                            s, m = add_event_to_calendar(srv, d['title'], d['release_date'], d['deadline_date'], d['link'])
-                            if s: 
-                                st.success(f"✅ {d['title']}")
-                                count += 1
-                            else: st.error(f"❌ {d['title']} -> {m}")
-                        
-                        if count > 0: st.balloons()
-                    except Exception as e:
-                        st.error(f"حدث خطأ (تأكد من الربط): {e}")
-                else:
-                    st.warning("No data found.")
-        else:
-            st.error("اكتب البيانات الأول!")
+    # Footer
+    MY_WHATSAPP = "+201009489979"
+    st.markdown(f"""<div class="footer">
+        <p style="margin: 0; padding: 0;">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></p>
+        <p style="margin: 5px 0 0 0; font-size: 12px;">
+            Need Help? <a href="https://wa.me/{MY_WHATSAPP}" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: none;">Contact Me on WhatsApp 💬</a>
+        </p>
+    </div>""", unsafe_allow_html=True)
 
-# 3. Clean Tab (الواجهة)
-with tab_clean:
-    c_user = st.text_input("Username للتنظيف", placeholder="2xxxxx@batechu.com")
-    
-    if st.button("Clean All Events", key="clean_btn"):
-        if c_user:
-            try:
-                # لازم نبعت اليوزر عشان يجيب التوكن بتاعه ويمسح من الكاليندر بتاعته هو
-                srv = get_calendar_service(username_key=c_user)
-                
-                c, m = delete_old_events(srv)
-                
-                if c > 0:
-                    st.success(m)
-                    st.balloons()
-                elif c == 0:
-                    st.info(m)
-                else:
-                    st.error(m)
-            except Exception as e:
-                st.error(f"حدث خطأ: {e}")
-        else:
-            st.error("اكتب اليوزر الأول عشان أعرف أمسح من عند مين!")
-
-# --- إعدادات الفوتر ومعلومات التواصل ---
-# 1. حط رقمك هنا (كود الدولة 20 + رقمك من غير صفر في الأول)
-MY_WHATSAPP = "+201009489979"  # <--- امسح x واكتب رقمك الحقيقي هنا
-
-# 2. الفوتر الجديد
-st.markdown(f"""
-<div class="footer">
-    <p style="margin: 0; padding: 0;">Developed with ❤️ by <a href="{MY_PORTFOLIO_URL}" target="_blank">Omar Mehawed</a></p>
-    <p style="margin: 5px 0 0 0; font-size: 12px;">
-        Need Help? 
-        <a href="https://wa.me/{MY_WHATSAPP}" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: none;">
-             Contact Me on WhatsApp 💬
-        </a>
-    </p>
-</div>
-""", unsafe_allow_html=True)
-
-
-#________________________________________________________________________________________________________________________________________________
-# ... (آخر حتة في الملف)
+# 🔴 هنا الـ Except الأخيرة اللي بتقفل الـ Try
 except Exception as e:
-    # نبعتلك إنذار الأول
     send_admin_alarm(str(e))
-    # وبعدين نستدعي صفحة الصيانة
     show_maintenance_mode()
-
-
-
