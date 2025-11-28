@@ -398,7 +398,7 @@ def send_admin_alarm(error_msg):
         except: pass
         
 # --- واجهة المستخدم (UI) ---
-st.set_page_config(page_title="BATU-NOTIF-LMS", page_icon="logo.png", layout="centered")
+st.set_page_config(page_title="BATU-Notifiaction-LMS", page_icon="logo.png", layout="centered")
 try:
     st.markdown("""
     <style>
@@ -540,3 +540,4 @@ try:
 except Exception as e:
     send_admin_alarm(str(e))
     show_maintenance_mode()
+
