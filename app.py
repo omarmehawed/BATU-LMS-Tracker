@@ -372,7 +372,7 @@ with tab_live:
     with col_a: live_user = st.text_input("Username", placeholder="24xxxx@batechu.com", key="live_u")
     with col_b: live_pass = st.text_input("Password", type="password", key="live_p")
     
-    refresh_rate = st.slider("افحص الموقع كل (دقائق):", 30, 180, 60, step=60)
+    refresh_rate = st.slider("افحص الموقع كل (دقائق):", 60, 180, 60, step=60)
     
     if live_user:
         # هل اليوزر ده ليه توكن متخزن؟
@@ -511,6 +511,7 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
